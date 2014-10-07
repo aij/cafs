@@ -1,0 +1,39 @@
+Goal:
+  * A globally distributed, decentralized filesystem.
+  * Reasonable privacy and censorship resistance.
+  * Publisher does not need a permanent online presence. (Connectivity required to publish updates is unavoidable though.)
+  * Nodes should cache data and be able to share their caches with other nearby nodes. (For example, a cluster of Debian boxes doing a software update should only have to fetch each package from outside the LAN once.)
+  * 
+  * Ability to reference specific versions of files in other people's volumes.
+  * Should be a reasonable alternative to AFS for many purposes.
+
+Non goals:
+  * 100% POSIX compliance.
+  * Very fine-grained permissions control.
+  * Ability to revoke read access.
+
+Potential goals:
+  * Ability to revoke write access. (It could be ok to just copy everything to a new volume, although updating every reference to it would be annoying.)
+
+
+Design overview:
+
+At the lowest layer is a storage daemon, CASD (Content-Addressable Storage Daemon). CASD stores blocks of data and their hashes. It will also serve blocks identified by their hashes. The administrative interface (seeing what is stored or choosing how to prioritize different blocks) can be implementation dependent.
+
+On top of CASD is a peer-to-peer layer, CAPP (until a better name is determined). CAPP should keep track of all CASD instances under the same administrative domain and ensure the appropriate number of replicas of each block is maintained. For small deployments a single CAPP daemon could be enough
+
+Files are stored sharded into blocks which are encrypted with covergent encryption. Small files are stored as a single block and are referenced by (hash,key) pairs. References to larger files are (hash,key) pairs of the top-level (indirect) block. Indirect blocks, when decrypted contain a sequence of references to other blocks (either leaf/data blocks or other indirect blocks).
+
+Directories consist of a sequence of (name, reference) pairs stored hierarchically in blocks. References to directories merely reference the root node of the directory, again by (hash,key) pair. The directory root node contains a version code so more advanced/efficient data structures can be supported in the future. In addition to files and directories, directories can contain mountpoints (references to other volumes).
+
+Volumes: Due to use of cryptographic hashes, file and directory references can only reference a specific version of the file or directory that existed at the time the reference was created. To reference an editable entity, we use volumes. The root block of a volume contains a public key, and possibly some other data specific to the publisher. The hash of the root block is the volume ID. To read a volume you look up the volume ID in the volume directory to get the latest volume snapshot. The volume snapshot contains a version code and a reference (the volume root), signed by the volume public key. For non-public volumes, the reference should be encrypted. The encryption key could be conveyed by means of public-key crypto messages included in the volume snapshot, or it could be conveyed by alternate channels. Since the volume root could itself be a mountpoint, care should be taken to detect infinite loops when reading a volume. 
+
+Volume publishers should take care to ensure that volume versions are monotonically increasing. For example, all the nodes that have the public key could use a consensus protocol like Raft or Paxos.
+
+For the global system, the volume directory and block directories would probably be a form of DHT. For smaller systems, something simpler with better guarantees can be used.
+
+Security Considerations:
+
+While covergent encryption prevents an attacker from reading unknown data, it does not prevent an attacker from confirming that another user is reading or storing certain known data. If that is unacceptable, regular encryption should be used on top of CAFS although it would of course prevent the lower layers from being able to deduplicate the data.
+
+Only trusted entities should be given the private key to write a volume, as anyone with the key could publish a volume snapshot with the maximal version number, thereby preventing further updates. For less trusted users, write access should be delegated via proxy.
