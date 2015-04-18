@@ -1,0 +1,24 @@
+[package]
+name = "cafs"
+version = "0.0.1"
+authors = ["Ivan Jager <aij+@mrph.org>"]
+
+[lib]
+name = "cafs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cafs-util"
+path = "src/main.rs"
+
+
+[dependencies]
+
+leveldb = "*"
+db-key = "^0.0.5"
+openssl = "^0.6.0"
+capnp = "*"
+
+[dev-dependencies]
+docopt = "*"
+rustc-serialize = "*"
