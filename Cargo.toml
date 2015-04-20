@@ -18,6 +18,7 @@ leveldb = "*"
 db-key = "^0.0.5"
 openssl = "^0.6.0"
 capnp = "*"
+rustc-serialize = "0.3"
 
 [dev-dependencies]
 docopt = "*"

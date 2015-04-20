@@ -1,6 +1,8 @@
 use db_key::Key;
 use openssl::crypto::hash;
 
+use rustc_serialize::hex::{ToHex, FromHex};
+
 #[derive(Clone,Debug)]
 pub struct Sha256{
     bits : [u8;32]
@@ -28,3 +30,8 @@ impl Sha256 {
     }
 }
 
+impl ToHex for Sha256 {
+    fn to_hex(&self) -> String {
+        self.bits.to_hex()
+    }
+}
