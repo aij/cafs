@@ -35,6 +35,11 @@ fn main() {
     if (args.arg_file != "") {
         let publisher = cafs::Publisher::new(stor);
         let res = publisher.export_file(Path::new(&args.arg_file));
-        println!("{:?}", res);
+        match res {
+            Ok(h) =>
+                println!("{}", h),
+            Err(_) =>
+                println!("{:?}", res),
+        }
     }
 }

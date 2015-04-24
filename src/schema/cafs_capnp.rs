@@ -18,7 +18,7 @@ pub mod reference {
 
   impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
     fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -82,11 +82,11 @@ pub mod reference {
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
   impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
     #[inline]
-    fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+    fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
   impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
     fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -221,7 +221,7 @@ pub mod reference {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -259,11 +259,11 @@ pub mod reference {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -344,7 +344,7 @@ pub mod reference {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -390,11 +390,11 @@ pub mod reference {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -500,7 +500,7 @@ pub mod reference {
 
       impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
         #[inline]
-        fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+        fn type_id() -> u64 { _private::TYPE_ID }
       }
       impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
         fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -551,7 +551,7 @@ pub mod reference {
       pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
       impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
         #[inline]
-        fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+        fn type_id() -> u64 { _private::TYPE_ID }
       }
       impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
         fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -649,7 +649,7 @@ pub mod reference {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -713,11 +713,11 @@ pub mod reference {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -853,7 +853,7 @@ pub mod reference {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -902,11 +902,11 @@ pub mod reference {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1011,7 +1011,7 @@ pub mod volume_root {
 
   impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
     fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1056,11 +1056,11 @@ pub mod volume_root {
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
   impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
     #[inline]
-    fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+    fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
   impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
     fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1156,7 +1156,7 @@ pub mod volume_header {
 
   impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
     fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1202,11 +1202,11 @@ pub mod volume_header {
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
   impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
     #[inline]
-    fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+    fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
   impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
     fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1307,7 +1307,7 @@ pub mod volume_header {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1352,11 +1352,11 @@ pub mod volume_header {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1454,7 +1454,7 @@ pub mod volume_header {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1509,7 +1509,7 @@ pub mod volume_header {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1615,7 +1615,7 @@ pub mod indirect_block {
 
   impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
     fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1653,11 +1653,11 @@ pub mod indirect_block {
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
   impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
     #[inline]
-    fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+    fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
   impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
     fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1738,7 +1738,7 @@ pub mod directory {
 
   impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
     fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1776,11 +1776,11 @@ pub mod directory {
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
   impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
     #[inline]
-    fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+    fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
   impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
     #[inline]
-    fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+    fn type_id() -> u64 { _private::TYPE_ID }
   }
   impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
     fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
@@ -1860,7 +1860,7 @@ pub mod directory {
 
     impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Reader>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
       fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
@@ -1905,11 +1905,11 @@ pub mod directory {
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
     impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
       #[inline]
-      fn struct_size(_unused_self : Option<Builder>) -> layout::StructSize { _private::STRUCT_SIZE }
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
     impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
       #[inline]
-      fn type_id(_unused_self : Option<Builder>) -> u64 { _private::TYPE_ID }
+      fn type_id() -> u64 { _private::TYPE_ID }
     }
     impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
       fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {

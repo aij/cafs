@@ -28,13 +28,38 @@ impl Reader {
             Err(e) => Err(io::Error::new(io::ErrorKind::Other, e)),
         }
     }
-    fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader) -> io::Result<Vec<u8>> {
+    fn read_blockref_vec(&self, r: cafs_capnp::reference::block_ref::Reader) -> io::Result<Vec<u8>> {
         assert!(!r.get_enc().has_aes()); // FIXME: Implement.
         let hb = try!(capnp_result_to_io(try!(capnp_result_to_io(r.get_rawblock())).get_sha256()));
         let h = Sha256::from_u8(hb);
         let raw = try!(self.read_rawblock(h));
         Ok(raw)
     }
+    fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> io::Result<()> {
+        out.write_all(&try!(self.read_blockref_vec(r)))
+    }
+    /*
+    fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &io::Write) -> io::Result<()> {
+        use cafs_capnp::reference::data_ref;
+        match r.which() {
+            Ok(data_ref::Block(b)) =>
+                self.read_blockref(try!(b), out),
+            Ok(data_ref::Inline(i)) =>
+               out.write_all(&try!(i)),
+            Ok(data_ref::Indirect(ind)) => {
+                let indir_bytes = try!(self.read_blockref_vec(ind));
+                let is = capnp::io::ArrayInputStream::new(&indir_bytes);
+                let reader = try!(capnp::serialize_packed::new_reader(is, capnp::message::DEFAULT_READER_OPTIONS)).get_root();
+                for sb in try!(reader.get_subblocks()) {
+                    try!(self.read_dataref(self, sb, out));
+                }
+            },
+            Err(e) =>
+                return capnp_result_to_io(Err(e))
+        }
+        Ok(())
+    }
+*/
 }
 
 fn capnp_error_to_io(e: capnp::Error) -> io::Error {
