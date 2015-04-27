@@ -38,28 +38,32 @@ impl Reader {
     fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> io::Result<()> {
         out.write_all(&try!(self.read_blockref_vec(r)))
     }
-    /*
-    fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &io::Write) -> io::Result<()> {
+    
+    pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> io::Result<()> {
         use cafs_capnp::reference::data_ref;
+        use capnp::message::MessageReader;
         match r.which() {
             Ok(data_ref::Block(b)) =>
-                self.read_blockref(try!(b), out),
+                try!(self.read_blockref(try!(b), out)),
             Ok(data_ref::Inline(i)) =>
-               out.write_all(&try!(i)),
+               try!(out.write_all(&try!(i))),
             Ok(data_ref::Indirect(ind)) => {
-                let indir_bytes = try!(self.read_blockref_vec(ind));
-                let is = capnp::io::ArrayInputStream::new(&indir_bytes);
-                let reader = try!(capnp::serialize_packed::new_reader(is, capnp::message::DEFAULT_READER_OPTIONS)).get_root();
-                for sb in try!(reader.get_subblocks()) {
-                    try!(self.read_dataref(self, sb, out));
+                let indir_bytes = try!(self.read_blockref_vec(try!(ind)));
+                let mut is = capnp::io::ArrayInputStream::new(&indir_bytes);
+                let message_reader = try!(capnp::serialize_packed::new_reader(&mut is, capnp::message::DEFAULT_READER_OPTIONS));
+                let reader : cafs_capnp::indirect_block::Reader = try!(message_reader.get_root());
+                let subs_r = reader.get_subblocks();
+                let subs = try!(subs_r);
+                for sb in subs.iter() {
+                    try!(self.read_dataref(sb, out));
                 }
             },
             Err(e) =>
-                return capnp_result_to_io(Err(e))
+                return Err(io::Error::new(io::ErrorKind::Other, e))
         }
         Ok(())
     }
-*/
+
 }
 
 fn capnp_error_to_io(e: capnp::Error) -> io::Error {

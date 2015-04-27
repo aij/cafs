@@ -31,7 +31,7 @@ impl Sha256 {
     pub fn as_slice(&self) -> &[u8] {
         &self.bits
     }
-    fn from_hex(s: &str) -> Self {
+    pub fn from_hex(s: &str) -> Self {
         match s.from_hex() {
             Ok(v) => Sha256::from_u8(&v),
             Err(e) => panic!("Parse error from hex: {}", e)
