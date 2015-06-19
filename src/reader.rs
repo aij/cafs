@@ -49,8 +49,7 @@ impl Reader {
                try!(out.write_all(&try!(i))),
             Ok(data_ref::Indirect(ind)) => {
                 let indir_bytes = try!(self.read_blockref_vec(try!(ind)));
-                let mut is = capnp::io::ArrayInputStream::new(&indir_bytes);
-                let message_reader = try!(capnp::serialize_packed::new_reader(&mut is, capnp::message::DEFAULT_READER_OPTIONS));
+                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(indir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
                 let reader : cafs_capnp::indirect_block::Reader = try!(message_reader.get_root());
                 let subs_r = reader.get_subblocks();
                 let subs = try!(subs_r);

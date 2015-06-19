@@ -6,7 +6,6 @@ use std::io::Error;
 
 use capnp::{MessageBuilder, MallocMessageBuilder};
 use capnp::serialize_packed;
-use capnp::io::BufferedOutputStreamWrapper;
 
 use cafs_capnp;
 use storage_pool_leveldb;
@@ -63,8 +62,7 @@ impl Publisher {
         }
         let mut encoded: Vec<u8> = vec![];
         {
-            let mut bos = BufferedOutputStreamWrapper::new(&mut encoded);
-            serialize_packed::write_packed_message(&mut bos, &mut message);
+            serialize_packed::write_message(&mut encoded, &mut message);
         }
         self.save_block(&encoded)
     }
