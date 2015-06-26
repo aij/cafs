@@ -41,9 +41,10 @@ fn main() {
         let mut fref = message.init_root::<cafs_capnp::reference::Builder>();
         let res = publisher.save_path(Path::new(&args.arg_path), &mut fref);
         match res {
-            Ok(fref) =>
-                println!("Success!"),
-            //println!("{:?}", fref),
+            Ok(fref) => {
+                println!("Success!");
+                println!("{}", fref.borrow().as_reader())
+            },
             Err(e) =>
                 println!("Error: {:?}", e),
         }

@@ -85,7 +85,7 @@ impl Publisher {
         self.save_raw_block(&encoded)
     }
 
-    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
         //let mut message = MallocMessageBuilder::new_default();
         let hash = try!(self.export_file(path));
         //let mut refb = message.init_root::<cafs_capnp::reference::Builder>();
@@ -98,7 +98,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
         
         let readir: Vec<DirEntry> =
             try!(fs::read_dir(path))
@@ -123,7 +123,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b cafs_capnp::reference::Builder<'a>, Error> {
+    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
         if typ.is_dir() {
             self.save_dir(path, refb)
         } else if typ.is_file() {
@@ -136,7 +136,7 @@ impl Publisher {
      
     }
 
-    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
         let md = try!(fs::symlink_metadata(path));
         self.save_path_with_type(path, md.file_type(), refb)
     }
