@@ -1,4 +1,4 @@
-// Store a regular file into a storage pool and print the hash of the IndirectBlock
+// Read a regular file into a storage pool and print it's contents.
 
 extern crate rustc_serialize;
 extern crate docopt;
