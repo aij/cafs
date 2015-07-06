@@ -4,6 +4,8 @@ use std;
 use std::io;
 use std::io::Read;
 use std::cmp::min;
+use std::boxed::Box;
+use std::sync::Arc;
 
 use sha256::Sha256;
 use db_key::Key;
@@ -16,12 +18,14 @@ use capnp::message::MessageReader;
 
 //extern crate core;
 
+#[derive(Clone)]
 pub struct Reader {
-    storage: storage_pool_leveldb::StoragePoolLeveldb, // TODO: Abstract this.
+     // FIXME: Is Arc really right here? Probably not.
+    storage: Arc<storage_pool_leveldb::StoragePoolLeveldb>, // TODO: Abstract this.
 }
 
 struct BlockReader<'a> {
-    reader: &'a Reader,
+    reader: Reader,
     bref: cafs_capnp::reference::block_ref::Reader<'a>,
     data: Option<Vec<u8>>,
     position: usize,
@@ -52,12 +56,12 @@ impl<'a> Read for BlockReader<'a> {
 }
 
 pub struct IndirectBlockReader<'a> {
-    reader: &'a Reader,
+    reader: Reader,
     indirect_block: cafs_capnp::indirect_block::Reader<'a>,
     index: u32,
-    r: &'a mut Read,
+    r: Box<Read>,
 }
-/*
+
 impl<'a> Read for IndirectBlockReader<'a> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let bytes = try!(self.r.read(buf));
@@ -73,11 +77,11 @@ impl<'a> Read for IndirectBlockReader<'a> {
         else { Ok(bytes) }
     }
 }
-*/
+
 
 impl Reader {
     pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb) -> Reader {
-        Reader{ storage: s }
+        Reader{ storage: Arc::new(s) }
     }
 
     fn read_rawblock(&self, h:Sha256) -> io::Result<Vec<u8>> {
@@ -131,22 +135,28 @@ impl Reader {
         Ok(())
     }
 
-    /*
-    fn dataref_read<'a>(&'a self, dr: cafs_capnp::reference::data_ref::Reader<'a>) -> io::Result<&'a mut Read> {
-        match dr.which() {
-            Ok(data_ref::Block(b)) =>
-                Ok(&mut BlockReader{ reader: self, bref: try!(b), data: None, position: 0 }),
+    fn dataref_read<'c,'b>(&'c self, dr: cafs_capnp::reference::data_ref::Reader<'b>) -> io::Result<Box<Read>> {
+        let w /*: Result<cafs_capnp::reference::data_ref::WhichReader<'b>, ::capnp::NotInSchema>*/ = dr.which();
+        unimplemented!();
+        /*match w  {
+            Ok(data_ref::Block(Ok(b))) => {
+                let block = b.clone();
+                Ok(Box::new(BlockReader{ reader: self.clone(), bref: block, data: None, position: 0 }))
+            },
             Ok(data_ref::Inline(i)) =>
-                Ok(&mut io::Cursor::new(try!(i))),
+                Ok(Box::new(io::Cursor::new(try!(i)))),
             Ok(data_ref::Indirect(ind)) => {
-                let b = try!(self.read_indir(try!(ind)));
-                Ok(&mut IndirectBlockReader{ reader: self, indirect_block: b, index: 0, r: &mut io::empty() })
+                let indir_bytes = try!(self.read_blockref_vec(try!(ind)));
+                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(indir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
+                let b : cafs_capnp::indirect_block::Reader = try!(message_reader.get_root());
+                //let b = try!(self.read_indir(try!(ind)));
+                Ok(Box::new(IndirectBlockReader{ reader: self.clone(), indirect_block: b, index: 0, r: Box::new(io::empty()) }))
             },
             Err(e) =>
                 Err(io::Error::new(io::ErrorKind::Other, e))
         }
+         */
     }
-*/
 }
 
 fn capnp_error_to_io(e: capnp::Error) -> io::Error {
