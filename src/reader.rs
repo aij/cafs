@@ -174,12 +174,14 @@ impl Reader {
 
     pub fn extract_path(&self, r: cafs_capnp::reference::Reader, create: bool, out: &Path) -> io::Result<()> {
         use cafs_capnp::reference::{File,Directory,Volume};
+        println!("Extracting to {}", out.display());
         match r.which() {
             Ok(File(Ok(dr))) =>
                 self.extract_file_data(dr, create, out),
             Ok(Directory(Ok(dr))) => {
                 // TODO: Shouldn't need to store entire directory in memory.
                 let dir_bytes = try!(self.read_dataref_vec(dr));
+                println!("got bytes");
                 let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(dir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
                 let reader : cafs_capnp::directory::Reader = try!(message_reader.get_root());
                 if create {

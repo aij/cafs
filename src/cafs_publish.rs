@@ -106,19 +106,23 @@ impl Publisher {
             .collect();
         
         let mut message = MallocMessageBuilder::new_default();
-        let mut dirb = message.init_root::<cafs_capnp::directory::Builder>();
-        let mut files = dirb.init_files(readir.len() as u32);
-
-        for (i, dentry) in readir.iter().enumerate() {
-            let ft = try!(dentry.file_type());
-            let mut entry = files.borrow().get(i as u32);
-            entry.set_name(&dentry.file_name().to_string_lossy());
-            let mut fref = entry.init_ref();
-            self.save_path_with_type(&dentry.path(), ft, &mut fref);
-        }
         {
-            let dref = refb.borrow().init_directory();
-            //dref.;
+            let mut dirb = message.init_root::<cafs_capnp::directory::Builder>();
+            let mut files = dirb.init_files(readir.len() as u32);
+
+            for (i, dentry) in readir.iter().enumerate() {
+                let ft = try!(dentry.file_type());
+                let mut entry = files.borrow().get(i as u32);
+                entry.set_name(&dentry.file_name().to_string_lossy());
+                let mut fref = entry.init_ref();
+                self.save_path_with_type(&dentry.path(), ft, &mut fref);
+            }
+        }
+        let mut dirbits: Vec<u8> = vec![];
+        serialize_packed::write_message(&mut dirbits, &mut message);
+        {
+            let mut dref = refb.borrow().init_directory();
+            try!(self.save_data(&dirbits, &mut dref));
         }
         Ok(refb)
     }
