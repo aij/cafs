@@ -6,6 +6,9 @@ use std::io::Read;
 use std::cmp::min;
 use std::boxed::Box;
 use std::sync::Arc;
+use std::fs;
+use std::fs::File;
+use std::path::Path;
 
 use sha256::Sha256;
 use db_key::Key;
@@ -156,6 +159,43 @@ impl Reader {
                 Err(io::Error::new(io::ErrorKind::Other, e))
         }
          */
+    }
+
+    pub fn read_dataref_vec(&self, r: cafs_capnp::reference::data_ref::Reader) -> io::Result<Vec<u8>> {
+        let mut out = vec![];
+        try!(self.read_dataref(r, &mut out));
+        Ok(out)
+    }
+
+    fn extract_file_data(&self, r: cafs_capnp::reference::data_ref::Reader, create: bool, out: &Path) -> io::Result<()> {
+        let mut file = try!(File::create(out));
+        self.read_dataref(r, &mut file)
+    }
+
+    pub fn extract_path(&self, r: cafs_capnp::reference::Reader, create: bool, out: &Path) -> io::Result<()> {
+        use cafs_capnp::reference::{File,Directory,Volume};
+        match r.which() {
+            Ok(File(Ok(dr))) =>
+                self.extract_file_data(dr, create, out),
+            Ok(Directory(Ok(dr))) => {
+                // TODO: Shouldn't need to store entire directory in memory.
+                let dir_bytes = try!(self.read_dataref_vec(dr));
+                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(dir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
+                let reader : cafs_capnp::directory::Reader = try!(message_reader.get_root());
+                if create {
+                    try!(fs::create_dir(out));
+                }
+                for f in try!(reader.get_files()).iter() {
+                    let path = out.join(try!(f.get_name()));
+                    assert_eq!(path.parent(), Some(out)); //FIXME
+                    try!(self.extract_path(try!(f.get_ref()), create, &path));
+                }
+                Ok(())
+            }
+                
+            _ =>
+                unimplemented!()
+        }
     }
 }
 

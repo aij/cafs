@@ -31,8 +31,10 @@ impl<'a> fmt::Display for cafs_capnp::reference::Reader<'a> {
         let mut message = capnp::message::MallocMessageBuilder::new_default();
         message.set_root(self.clone());
         let bytes = message_to_bytes(&message);
+        println!("bytes = {:?}", bytes);
+
         let b64 = bytes.to_base64(base64::URL_SAFE);
-        write!(f, "cafs://ref/{}", b64)
+        write!(f, "cafs:///ref/{}", b64)
     }
 }
 
