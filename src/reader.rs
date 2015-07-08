@@ -72,7 +72,7 @@ impl<'a> Read for IndirectBlockReader<'a> {
         let bytes = try!(self.r.read(buf));
         if bytes == 0 && buf.len() != 0 {
             self.index += 1;
-            let subs = try!(self.indirect_block.get_subblocks());
+            let subs = try!(capnp_result_to_io(self.indirect_block.get_subblocks()));
             if self.index < subs.len() {
                 self.r = try!(self.reader.dataref_read(subs.get(self.index)));
                 self.read(buf)
@@ -222,6 +222,17 @@ impl std::fmt::Display for NotFoundError {
         write!(f, "Not found: {}", self.what)
     }
 }
+
+fn capnp_error_to_io(e: capnp::Error) -> io::Error {
+       io::Error::new(io::ErrorKind::Other, e)
+}
+fn capnp_result_to_io<T>(r: std::result::Result<T,capnp::Error>) -> io::Result<T> {
+    match r {
+        Ok(x) => Ok(x),
+        Err(e) => Err(capnp_error_to_io(e))
+    }
+}
+
 /*
 pub struct CapnpError(capnp::Error);
 
