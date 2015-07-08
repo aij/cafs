@@ -15,6 +15,8 @@ use db_key::Key;
 use storage_pool_leveldb;
 use cafs_capnp;
 use cafs_capnp::reference::data_ref;
+use Result;
+use Error;
 
 use capnp;
 use capnp::message::MessageReader;
@@ -87,27 +89,28 @@ impl Reader {
         Reader{ storage: Arc::new(s) }
     }
 
-    fn read_rawblock(&self, h:Sha256) -> io::Result<Vec<u8>> {
+    fn read_rawblock(&self, h:Sha256) -> Result<Vec<u8>> {
         match self.storage.get(h) {
-            Ok(None) => Err(io::Error::new(io::ErrorKind::Other, NotFoundError{ what: "hash not found".to_string() })),
+            Ok(None) => Err(Error::other(NotFoundError{ what: "hash not found".to_string() })),
             Ok(Some(v)) => Ok(v),
-            Err(e) => Err(io::Error::new(io::ErrorKind::Other, e)),
+            Err(e) => Err(Error::other(e)),
         }
     }
-    fn read_blockref_vec(&self, r: cafs_capnp::reference::block_ref::Reader) -> io::Result<Vec<u8>> {
+    fn read_blockref_vec(&self, r: cafs_capnp::reference::block_ref::Reader) -> Result<Vec<u8>> {
         assert!(!r.get_enc().has_aes()); // FIXME: Implement.
-        let hb = try!(capnp_result_to_io(try!(capnp_result_to_io(r.get_rawblock())).get_sha256()));
+        let hb = try!(try!(r.get_rawblock()).get_sha256());
         let h = Sha256::from_u8(hb);
         let raw = try!(self.read_rawblock(h));
         Ok(raw)
     }
-    fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> io::Result<()> {
-        out.write_all(&try!(self.read_blockref_vec(r)))
+    fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+        try!(out.write_all(&try!(self.read_blockref_vec(r))));
+        Ok(())
     }
 
      /*
     FIXME: lifetimes are not working out.
-    fn read_indir<'a,'b>(&'a self, bref: cafs_capnp::reference::block_ref::Reader) -> io::Result<cafs_capnp::indirect_block::Reader<'b>> {
+    fn read_indir<'a,'b>(&'a self, bref: cafs_capnp::reference::block_ref::Reader) -> Result<cafs_capnp::indirect_block::Reader<'b>> {
         let indir_bytes = try!(self.read_blockref_vec(bref));
         let mut cursor = io::Cursor::new(indir_bytes);
         let message_reader = try!(capnp::serialize_packed::read_message(&mut cursor, capnp::message::DEFAULT_READER_OPTIONS));
@@ -115,7 +118,7 @@ impl Reader {
         Ok(reader)
     }*/
     
-    pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> io::Result<()> {
+    pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
         match r.which() {
             Ok(data_ref::Block(b)) =>
                 try!(self.read_blockref(try!(b), out)),
@@ -133,12 +136,12 @@ impl Reader {
                 }
             },
             Err(e) =>
-                return Err(io::Error::new(io::ErrorKind::Other, e))
+                return Err(Error::new(io::Error::new(io::ErrorKind::Other, e)))
         }
         Ok(())
     }
 
-    fn dataref_read<'c,'b>(&'c self, dr: cafs_capnp::reference::data_ref::Reader<'b>) -> io::Result<Box<Read>> {
+    fn dataref_read<'c,'b>(&'c self, dr: cafs_capnp::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
         let w /*: Result<cafs_capnp::reference::data_ref::WhichReader<'b>, ::capnp::NotInSchema>*/ = dr.which();
         unimplemented!();
         /*match w  {
@@ -161,18 +164,18 @@ impl Reader {
          */
     }
 
-    pub fn read_dataref_vec(&self, r: cafs_capnp::reference::data_ref::Reader) -> io::Result<Vec<u8>> {
+    pub fn read_dataref_vec(&self, r: cafs_capnp::reference::data_ref::Reader) -> Result<Vec<u8>> {
         let mut out = vec![];
         try!(self.read_dataref(r, &mut out));
         Ok(out)
     }
 
-    fn extract_file_data(&self, r: cafs_capnp::reference::data_ref::Reader, create: bool, out: &Path) -> io::Result<()> {
+    fn extract_file_data(&self, r: cafs_capnp::reference::data_ref::Reader, create: bool, out: &Path) -> Result<()> {
         let mut file = try!(File::create(out));
         self.read_dataref(r, &mut file)
     }
 
-    pub fn extract_path(&self, r: cafs_capnp::reference::Reader, create: bool, out: &Path) -> io::Result<()> {
+    pub fn extract_path(&self, r: cafs_capnp::reference::Reader, create: bool, out: &Path) -> Result<()> {
         use cafs_capnp::reference::{File,Directory,Volume};
         println!("Extracting to {}", out.display());
         match r.which() {
@@ -201,15 +204,7 @@ impl Reader {
     }
 }
 
-fn capnp_error_to_io(e: capnp::Error) -> io::Error {
-       io::Error::new(io::ErrorKind::Other, e)
-}
-fn capnp_result_to_io<T>(r: Result<T,capnp::Error>) -> io::Result<T> {
-    match r {
-        Ok(x) => Ok(x),
-        Err(e) => Err(capnp_error_to_io(e))
-    }
-}
+
 
 #[derive(Debug)]
 struct NotFoundError{ what: String }

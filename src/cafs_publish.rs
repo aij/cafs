@@ -3,11 +3,12 @@ use std::io;
 use std::io::Read;
 use std::fs;
 use std::fs::{DirEntry, File, FileType, OpenOptions};
-use std::io::Error;
 
 use capnp::{MessageBuilder, MallocMessageBuilder};
 use capnp::serialize_packed;
 
+use Result;
+use Error;
 use cafs_capnp;
 use storage_pool_leveldb;
 use sha256::Sha256;
@@ -23,14 +24,14 @@ impl Publisher {
     pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb) -> Publisher {
         Publisher{ storage: s }
     }
-    fn save_raw_block(&self, block:&[u8]) -> Result<Sha256, Error> {
+    fn save_raw_block(&self, block:&[u8]) -> Result<Sha256> {
         match self.storage.put(block) {
             Ok(x) => Ok(x),
-            Err(e) => Err(Error::new(io::ErrorKind::Other, e))
+            Err(e) => Err(Error::other(e))
         }
     }
 
-    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut cafs_capnp::reference::data_ref::Builder<'a>) -> Result<&'b cafs_capnp::reference::data_ref::Builder<'a>, Error> {
+    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut cafs_capnp::reference::data_ref::Builder<'a>) -> Result<&'b cafs_capnp::reference::data_ref::Builder<'a>> {
         // FIXME: Assumes data < BLOCK_SIZE
         let hash = try!(self.save_raw_block(data));
         {
@@ -47,7 +48,7 @@ impl Publisher {
         
     }
      */
-    pub fn export_file(&self, path:&Path) -> Result<Sha256, Error> {
+    pub fn export_file(&self, path:&Path) -> Result<Sha256> {
         let mut f = try!(File::open(path));
         let mut buf = [0u8; BLOCK_SIZE];
         let mut message = MallocMessageBuilder::new_default();
@@ -85,7 +86,7 @@ impl Publisher {
         self.save_raw_block(&encoded)
     }
 
-    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
         //let mut message = MallocMessageBuilder::new_default();
         let hash = try!(self.export_file(path));
         //let mut refb = message.init_root::<cafs_capnp::reference::Builder>();
@@ -98,7 +99,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
         
         let readir: Vec<DirEntry> =
             try!(fs::read_dir(path))
@@ -127,7 +128,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
+    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
         if typ.is_dir() {
             self.save_dir(path, refb)
         } else if typ.is_file() {
@@ -140,7 +141,7 @@ impl Publisher {
      
     }
 
-    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>, Error> {
+    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
         let md = try!(fs::symlink_metadata(path));
         self.save_path_with_type(path, md.file_type(), refb)
     }

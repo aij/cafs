@@ -14,6 +14,7 @@ pub mod storage_pool_leveldb;
 mod sha256;
 mod cafs_publish;
 mod reader;
+mod error;
 
 #[allow(dead_code)]
 pub mod cafs_capnp {
@@ -24,8 +25,10 @@ pub use cafs_publish::Publisher;
 pub use reader::Reader;
 pub use sha256::Sha256;
 
+pub use error::{Result, Error};
+
 impl<'a> fmt::Display for cafs_capnp::reference::Reader<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         //use cafs_capnp::reference::Builder;
         use capnp::traits::CastableTo;
         let mut message = capnp::message::MallocMessageBuilder::new_default();
