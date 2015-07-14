@@ -35,7 +35,7 @@ impl Publisher {
         // FIXME: Assumes data < BLOCK_SIZE
         let hash = try!(self.save_raw_block(data));
         {
-            let mut rawblock = dataref.borrow().init_indirect().init_rawblock();
+            let mut rawblock = dataref.borrow().init_block().init_rawblock();
             rawblock.set_sha256(hash.as_slice());
         };
         Ok(dataref)
