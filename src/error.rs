@@ -15,6 +15,7 @@ pub struct Error {
 
 impl Error {
     pub fn new(e: io::Error) -> Error {
+        panic!("cafs error created! {:?}", e);
         Error { ioerr: e, backtrace: get_backtrace_now() }
     }
 
@@ -22,7 +23,7 @@ impl Error {
         Error::new(io::Error::new(io::ErrorKind::Other, e))
     }
 
-    fn get_backtrace_str(&self) -> &str {
+    pub fn get_backtrace_str(&self) -> &str {
         &self.backtrace
     }
 }
@@ -42,7 +43,7 @@ impl std::convert::From<Error> for io::Error {
 //impl std::convert::From<std::error::Error> for Error {
 impl std::convert::From<capnp::Error> for Error {
     fn from(e: capnp::Error) -> Error {
-        Error::new(io::Error::new(io::ErrorKind::Other, e))
+        Error::other(e)
     }
 }
 

@@ -46,3 +46,21 @@ pub fn message_to_bytes<M>(message: &M) -> Vec<u8> where M: capnp::MessageBuilde
     capnp::serialize_packed::write_message(&mut encoded, message);
     encoded
 }
+
+pub struct OwnedMessage<T> {
+   message: ::capnp::OwnedSpaceMessageReader,
+   phantom_data: ::std::marker::PhantomData<T>,
+}
+
+impl <'a, T> OwnedMessage <T> where T: ::capnp::traits::FromPointerReader<'a> {
+    pub fn new(mr: ::capnp::OwnedSpaceMessageReader) -> OwnedMessage<T> {
+        OwnedMessage {
+            message: mr,
+            phantom_data: ::std::marker::PhantomData
+        }
+    }
+   pub fn get(&'a self) -> ::capnp::Result<T> {
+     use capnp::MessageReader;
+     self.message.get_root()
+   }
+}

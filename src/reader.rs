@@ -17,6 +17,8 @@ use cafs_capnp;
 use cafs_capnp::reference::data_ref;
 use Result;
 use Error;
+use OwnedMessage;
+
 
 use capnp;
 use capnp::message::MessageReader;
@@ -108,33 +110,31 @@ impl Reader {
         Ok(())
     }
 
-     /*
-    FIXME: lifetimes are not working out.
-    fn read_indir<'a,'b>(&'a self, bref: cafs_capnp::reference::block_ref::Reader) -> Result<cafs_capnp::indirect_block::Reader<'b>> {
+    fn read_indir(&self, bref: cafs_capnp::reference::block_ref::Reader) -> Result<OwnedMessage<cafs_capnp::indirect_block::Reader>> {
         let indir_bytes = try!(self.read_blockref_vec(bref));
         let mut cursor = io::Cursor::new(indir_bytes);
         let message_reader = try!(capnp::serialize_packed::read_message(&mut cursor, capnp::message::DEFAULT_READER_OPTIONS));
-        let reader: cafs_capnp::indirect_block::Reader<'b> = try!(message_reader.get_root());
-        Ok(reader)
-    }*/
-    
+        Ok(OwnedMessage::new(message_reader))
+    }
+
+    fn read_indirect(&self, bref: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+        let indir = try!(self.read_indir(bref));
+        let reader = try!(indir.get());
+        let subs_r = reader.get_subblocks();
+        let subs = try!(subs_r);
+        for sb in subs.iter() {
+            try!(self.read_dataref(sb, out));
+        }
+        Ok(())
+    }
     pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
         match r.which() {
             Ok(data_ref::Block(b)) =>
                 try!(self.read_blockref(try!(b), out)),
             Ok(data_ref::Inline(i)) =>
-               try!(out.write_all(&try!(i))),
-            Ok(data_ref::Indirect(ind)) => {
-                let indir_bytes = try!(self.read_blockref_vec(try!(ind)));
-                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(indir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
-                let reader : cafs_capnp::indirect_block::Reader = try!(message_reader.get_root());
-                //FIXME: above should be let reader = try!(self.read_indir(try!(ind)));
-                let subs_r = reader.get_subblocks();
-                let subs = try!(subs_r);
-                for sb in subs.iter() {
-                    try!(self.read_dataref(sb, out));
-                }
-            },
+                try!(out.write_all(&try!(i))),
+            Ok(data_ref::Indirect(ind)) =>
+                try!(self.read_indirect(try!(ind), out)),
             Err(e) =>
                 return Err(Error::new(io::Error::new(io::ErrorKind::Other, e)))
         }
