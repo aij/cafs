@@ -12,24 +12,26 @@ use capnp::message::MessageBuilder;
 
 pub mod storage_pool_leveldb;
 mod sha256;
-mod cafs_publish;
+mod publisher;
 mod reader;
 mod error;
 
 #[allow(dead_code)]
-pub mod cafs_capnp {
+pub mod proto {
     include!("schema/cafs_capnp.rs");
 }
+pub use proto as cafs_capnp; // Because the generated code refers to itself as ::cafs_capnp rather than ::cafs::proto.
 
-pub use cafs_publish::Publisher;
+
+pub use publisher::Publisher;
 pub use reader::Reader;
 pub use sha256::Sha256;
 
 pub use error::{Result, Error};
 
-impl<'a> fmt::Display for cafs_capnp::reference::Reader<'a> {
+impl<'a> fmt::Display for proto::reference::Reader<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        //use cafs_capnp::reference::Builder;
+        //use proto::reference::Builder;
         use capnp::traits::CastableTo;
         let mut message = capnp::message::MallocMessageBuilder::new_default();
         message.set_root(self.clone());
@@ -67,8 +69,8 @@ trait ToOwnedMessage<T> {
     fn to_owned_message(self) -> capnp::Result<OwnedMessage<T>>;
 }
 
-impl<'a,'b> ToOwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>> for cafs_capnp::reference::block_ref::Reader<'b> {
-    fn to_owned_message(self) -> capnp::Result<OwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>>> {
+impl<'a,'b> ToOwnedMessage<proto::reference::block_ref::Reader<'a>> for proto::reference::block_ref::Reader<'b> {
+    fn to_owned_message(self) -> capnp::Result<OwnedMessage<proto::reference::block_ref::Reader<'a>>> {
         let mut buffer = Vec::new();
         {
             let mut message = ::capnp::MallocMessageBuilder::new_default();

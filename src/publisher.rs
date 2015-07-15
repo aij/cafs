@@ -9,7 +9,7 @@ use capnp::serialize_packed;
 
 use Result;
 use Error;
-use cafs_capnp;
+use proto;
 use storage_pool_leveldb;
 use sha256::Sha256;
 
@@ -31,7 +31,7 @@ impl Publisher {
         }
     }
 
-    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut cafs_capnp::reference::data_ref::Builder<'a>) -> Result<&'b cafs_capnp::reference::data_ref::Builder<'a>> {
+    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut proto::reference::data_ref::Builder<'a>) -> Result<&'b proto::reference::data_ref::Builder<'a>> {
         // FIXME: Assumes data < BLOCK_SIZE
         let hash = try!(self.save_raw_block(data));
         {
@@ -41,10 +41,10 @@ impl Publisher {
         Ok(dataref)
     }
     /*
-    fn save_block(&self, block:&[u8], res: &mut cafs_capnp::reference::block_ref::Builder) -> Result<&cafs_capnp::reference::block_ref::Builder, Error> {
+    fn save_block(&self, block:&[u8], res: &mut proto::reference::block_ref::Builder) -> Result<&proto::reference::block_ref::Builder, Error> {
     }
 
-    fn save_data(&self, data: Reader, res: &mut cafs_capnp::reference::data_ref::Builder) -> Result<cafs_capnp::reference::data_ref::Builder, Error> {
+    fn save_data(&self, data: Reader, res: &mut proto::reference::data_ref::Builder) -> Result<proto::reference::data_ref::Builder, Error> {
         
     }
      */
@@ -53,7 +53,7 @@ impl Publisher {
         let mut buf = [0u8; BLOCK_SIZE];
         let mut message = MallocMessageBuilder::new_default();
         {
-        let mut indir = message.init_root::<cafs_capnp::indirect_block::Builder>();
+        let mut indir = message.init_root::<proto::indirect_block::Builder>();
         let mut blocks = vec![];
         
         loop {
@@ -86,10 +86,10 @@ impl Publisher {
         self.save_raw_block(&encoded)
     }
 
-    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
+    pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
         //let mut message = MallocMessageBuilder::new_default();
         let hash = try!(self.export_file(path));
-        //let mut refb = message.init_root::<cafs_capnp::reference::Builder>();
+        //let mut refb = message.init_root::<proto::reference::Builder>();
         {
             let mut dataref = refb.borrow().init_file();
             let mut rawblock = dataref.borrow().init_indirect().init_rawblock();
@@ -99,7 +99,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
+    pub fn save_dir<'a, 'b>(&self, path:&Path, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
         
         let readir: Vec<DirEntry> =
             try!(fs::read_dir(path))
@@ -108,7 +108,7 @@ impl Publisher {
         
         let mut message = MallocMessageBuilder::new_default();
         {
-            let mut dirb = message.init_root::<cafs_capnp::directory::Builder>();
+            let mut dirb = message.init_root::<proto::directory::Builder>();
             let mut files = dirb.init_files(readir.len() as u32);
 
             for (i, dentry) in readir.iter().enumerate() {
@@ -128,7 +128,7 @@ impl Publisher {
         Ok(refb)
     }
 
-    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
+    fn save_path_with_type<'a, 'b>(&self, path:&Path, typ: FileType, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
         if typ.is_dir() {
             self.save_dir(path, refb)
         } else if typ.is_file() {
@@ -141,7 +141,7 @@ impl Publisher {
      
     }
 
-    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut cafs_capnp::reference::Builder<'a>) -> Result<&'b mut cafs_capnp::reference::Builder<'a>> {
+    pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
         let md = try!(fs::symlink_metadata(path));
         self.save_path_with_type(path, md.file_type(), refb)
     }

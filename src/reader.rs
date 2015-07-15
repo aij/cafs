@@ -13,8 +13,8 @@ use std::path::Path;
 use sha256::Sha256;
 use db_key::Key;
 use storage_pool_leveldb;
-use cafs_capnp;
-use cafs_capnp::reference::data_ref;
+use proto;
+use proto::reference::data_ref;
 use Result;
 use Error;
 use OwnedMessage;
@@ -33,7 +33,7 @@ pub struct Reader {
 
 struct BlockReader<'a> {
     reader: Reader,
-    bref: OwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>>,
+    bref: OwnedMessage<proto::reference::block_ref::Reader<'a>>,
     data: Option<Vec<u8>>,
     position: usize,
 }
@@ -67,7 +67,7 @@ impl<'a> Read for BlockReader<'a> {
 
 pub struct IndirectBlockReader<'a> {
     reader: Reader,
-    indirect_block: OwnedMessage<cafs_capnp::indirect_block::Reader<'a>>,
+    indirect_block: OwnedMessage<proto::indirect_block::Reader<'a>>,
     index: u32,
     r: Box<Read>,
 }
@@ -109,26 +109,26 @@ impl Reader {
             Err(e) => Err(Error::other(e)),
         }
     }
-    fn read_blockref_vec(&self, r: &cafs_capnp::reference::block_ref::Reader) -> Result<Vec<u8>> {
+    fn read_blockref_vec(&self, r: &proto::reference::block_ref::Reader) -> Result<Vec<u8>> {
         assert!(!r.get_enc().has_aes()); // FIXME: Implement.
         let hb = try!(try!(r.get_rawblock()).get_sha256());
         let h = Sha256::from_u8(hb);
         let raw = try!(self.read_rawblock(h));
         Ok(raw)
     }
-    fn read_blockref(&self, r: &cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+    fn read_blockref(&self, r: &proto::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
         try!(out.write_all(&try!(self.read_blockref_vec(r))));
         Ok(())
     }
 
-    fn read_indir<'a,'b>(&self, bref: &cafs_capnp::reference::block_ref::Reader<'a>) -> Result<OwnedMessage<cafs_capnp::indirect_block::Reader<'b>>> {
+    fn read_indir<'a,'b>(&self, bref: &proto::reference::block_ref::Reader<'a>) -> Result<OwnedMessage<proto::indirect_block::Reader<'b>>> {
         let indir_bytes = try!(self.read_blockref_vec(bref));
         let mut cursor = io::Cursor::new(indir_bytes);
         let message_reader = try!(capnp::serialize_packed::read_message(&mut cursor, capnp::message::DEFAULT_READER_OPTIONS));
         Ok(OwnedMessage::new(message_reader))
     }
 
-    fn read_indirect(&self, bref: &cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+    fn read_indirect(&self, bref: &proto::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
         let indir = try!(self.read_indir(bref));
         let reader = try!(indir.get());
         let subs_r = reader.get_subblocks();
@@ -138,7 +138,7 @@ impl Reader {
         }
         Ok(())
     }
-    pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
+    pub fn read_dataref(&self, r: proto::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
         match r.which() {
             Ok(data_ref::Block(b)) =>
                 try!(self.read_blockref(&try!(b), out)),
@@ -152,7 +152,7 @@ impl Reader {
         Ok(())
     }
 
-    fn dataref_read<'c,'b>(&'c self, dr: cafs_capnp::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
+    fn dataref_read<'c,'b>(&'c self, dr: proto::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
         use ToOwnedMessage;
         match dr.which()  {
             Ok(data_ref::Block(Ok(b))) => {
@@ -172,19 +172,19 @@ impl Reader {
         }
     }
 
-    pub fn read_dataref_vec(&self, r: cafs_capnp::reference::data_ref::Reader) -> Result<Vec<u8>> {
+    pub fn read_dataref_vec(&self, r: proto::reference::data_ref::Reader) -> Result<Vec<u8>> {
         let mut out = vec![];
         try!(self.read_dataref(r, &mut out));
         Ok(out)
     }
 
-    fn extract_file_data(&self, r: cafs_capnp::reference::data_ref::Reader, create: bool, out: &Path) -> Result<()> {
+    fn extract_file_data(&self, r: proto::reference::data_ref::Reader, create: bool, out: &Path) -> Result<()> {
         let mut file = try!(File::create(out));
         self.read_dataref(r, &mut file)
     }
 
-    pub fn extract_path(&self, r: cafs_capnp::reference::Reader, create: bool, out: &Path) -> Result<()> {
-        use cafs_capnp::reference::{File,Directory,Volume};
+    pub fn extract_path(&self, r: proto::reference::Reader, create: bool, out: &Path) -> Result<()> {
+        use proto::reference::{File,Directory,Volume};
         println!("Extracting to {}", out.display());
         match r.which() {
             Ok(File(Ok(dr))) =>
@@ -194,7 +194,7 @@ impl Reader {
                 let dir_bytes = try!(self.read_dataref_vec(dr));
                 println!("got bytes");
                 let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(dir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
-                let reader : cafs_capnp::directory::Reader = try!(message_reader.get_root());
+                let reader : proto::directory::Reader = try!(message_reader.get_root());
                 if create {
                     try!(fs::create_dir(out));
                 }

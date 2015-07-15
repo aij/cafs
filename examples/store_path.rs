@@ -10,7 +10,7 @@ use std::path::Path;
 use capnp::{MessageBuilder, MallocMessageBuilder};
 
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
-use cafs::cafs_capnp;
+use cafs::proto;
 
 // Write the Docopt usage string.
 static USAGE: &'static str = "
@@ -38,7 +38,7 @@ fn main() {
     if (args.arg_path != "") {
         let publisher = cafs::Publisher::new(stor);
         let mut message = MallocMessageBuilder::new_default();
-        let mut fref = message.init_root::<cafs_capnp::reference::Builder>();
+        let mut fref = message.init_root::<proto::reference::Builder>();
         let res = publisher.save_path(Path::new(&args.arg_path), &mut fref);
         match res {
             Ok(fref) => {

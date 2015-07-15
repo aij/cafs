@@ -10,7 +10,7 @@ use std::path::Path;
 use std::io::Write;   
 
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
-use cafs::cafs_capnp;
+use cafs::proto;
 use cafs::Sha256;
 
 use capnp::{MessageBuilder, MallocMessageBuilder};
@@ -56,10 +56,10 @@ fn main() {
 }
 
 // FIXME: Can we avoid having to take a MallocMessageBuilder here?
-fn mk_dataref<'a>(args: Args, message: &'a mut MallocMessageBuilder) -> cafs_capnp::reference::data_ref::Reader<'a> {
+fn mk_dataref<'a>(args: Args, message: &'a mut MallocMessageBuilder) -> proto::reference::data_ref::Reader<'a> {
     let sha = Sha256::from_hex(&args.arg_hash);
 
-    let mut dr = message.init_root::<cafs_capnp::reference::data_ref::Builder>();
+    let mut dr = message.init_root::<proto::reference::data_ref::Builder>();
     {
         let mut indir = dr.borrow().init_indirect();
         let mut rawblock = indir.init_rawblock();

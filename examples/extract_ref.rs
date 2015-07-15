@@ -14,7 +14,7 @@ use url::Url;
 use rustc_serialize::base64::FromBase64;
 
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
-use cafs::cafs_capnp;
+use cafs::proto;
 use cafs::Sha256;
 
 use capnp::{MessageBuilder, MallocMessageBuilder, MessageReader};
@@ -60,7 +60,7 @@ fn main() {
     }
 }
 
-fn mk_ref<'a>(args: &'a Args, message: &'a mut MallocMessageBuilder) -> cafs_capnp::reference::Reader<'a> {
+fn mk_ref<'a>(args: &'a Args, message: &'a mut MallocMessageBuilder) -> proto::reference::Reader<'a> {
 
     let r = &args.arg_reference;
     assert_eq!(&r[0..12], "cafs:///ref/");
@@ -70,8 +70,8 @@ fn mk_ref<'a>(args: &'a Args, message: &'a mut MallocMessageBuilder) -> cafs_cap
     println!("bytes = {:?}", bytes);
 
     let message_reader = capnp::serialize_packed::read_message(&mut io::Cursor::new(bytes), capnp::message::DEFAULT_READER_OPTIONS).unwrap();
-    let reader : cafs_capnp::reference::Reader = message_reader.get_root().unwrap();
+    let reader : proto::reference::Reader = message_reader.get_root().unwrap();
     // FIXME: Is there a less stupid way to return a Reader?
     message.set_root(reader).unwrap();
-    message.get_root::<cafs_capnp::reference::Builder>().unwrap().as_reader()
+    message.get_root::<proto::reference::Builder>().unwrap().as_reader()
 }
