@@ -33,7 +33,7 @@ pub struct Reader {
 
 struct BlockReader<'a> {
     reader: Reader,
-    bref: cafs_capnp::reference::block_ref::Reader<'a>,
+    bref: OwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>>,
     data: Option<Vec<u8>>,
     position: usize,
 }
@@ -42,7 +42,10 @@ impl<'a> Read for BlockReader<'a> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match self.data {
             None => {
-                let d = try!(self.reader.read_blockref_vec(self.bref));
+                let d = {
+                    let br = try!(capnp_result_to_io(self.bref.get()));
+                    try!(self.reader.read_blockref_vec(&br))
+                };
                 self.data = Some(d);
                 self.read(buf)
             },
@@ -64,7 +67,7 @@ impl<'a> Read for BlockReader<'a> {
 
 pub struct IndirectBlockReader<'a> {
     reader: Reader,
-    indirect_block: cafs_capnp::indirect_block::Reader<'a>,
+    indirect_block: OwnedMessage<cafs_capnp::indirect_block::Reader<'a>>,
     index: u32,
     r: Box<Read>,
 }
@@ -74,12 +77,20 @@ impl<'a> Read for IndirectBlockReader<'a> {
         let bytes = try!(self.r.read(buf));
         if bytes == 0 && buf.len() != 0 {
             self.index += 1;
-            let subs = try!(capnp_result_to_io(self.indirect_block.get_subblocks()));
-            if self.index < subs.len() {
-                self.r = try!(self.reader.dataref_read(subs.get(self.index)));
+            let retry = { // Scope to limit the borrow.
+                let indir = try!(capnp_result_to_io(self.indirect_block.get()));
+                let subs = try!(capnp_result_to_io(indir.get_subblocks()));
+                if self.index < subs.len() {
+                    self.r = try!(self.reader.dataref_read(subs.get(self.index)));
+                    true
+                }
+                else { false }
+            };
+            if retry {
                 self.read(buf)
+            } else {
+                Ok(0)
             }
-            else { Ok(0) }
         }
         else { Ok(bytes) }
     }
@@ -98,26 +109,26 @@ impl Reader {
             Err(e) => Err(Error::other(e)),
         }
     }
-    fn read_blockref_vec(&self, r: cafs_capnp::reference::block_ref::Reader) -> Result<Vec<u8>> {
+    fn read_blockref_vec(&self, r: &cafs_capnp::reference::block_ref::Reader) -> Result<Vec<u8>> {
         assert!(!r.get_enc().has_aes()); // FIXME: Implement.
         let hb = try!(try!(r.get_rawblock()).get_sha256());
         let h = Sha256::from_u8(hb);
         let raw = try!(self.read_rawblock(h));
         Ok(raw)
     }
-    fn read_blockref(&self, r: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+    fn read_blockref(&self, r: &cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
         try!(out.write_all(&try!(self.read_blockref_vec(r))));
         Ok(())
     }
 
-    fn read_indir(&self, bref: cafs_capnp::reference::block_ref::Reader) -> Result<OwnedMessage<cafs_capnp::indirect_block::Reader>> {
+    fn read_indir<'a,'b>(&self, bref: &cafs_capnp::reference::block_ref::Reader<'a>) -> Result<OwnedMessage<cafs_capnp::indirect_block::Reader<'b>>> {
         let indir_bytes = try!(self.read_blockref_vec(bref));
         let mut cursor = io::Cursor::new(indir_bytes);
         let message_reader = try!(capnp::serialize_packed::read_message(&mut cursor, capnp::message::DEFAULT_READER_OPTIONS));
         Ok(OwnedMessage::new(message_reader))
     }
 
-    fn read_indirect(&self, bref: cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
+    fn read_indirect(&self, bref: &cafs_capnp::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
         let indir = try!(self.read_indir(bref));
         let reader = try!(indir.get());
         let subs_r = reader.get_subblocks();
@@ -130,11 +141,11 @@ impl Reader {
     pub fn read_dataref(&self, r: cafs_capnp::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
         match r.which() {
             Ok(data_ref::Block(b)) =>
-                try!(self.read_blockref(try!(b), out)),
+                try!(self.read_blockref(&try!(b), out)),
             Ok(data_ref::Inline(i)) =>
                 try!(out.write_all(&try!(i))),
             Ok(data_ref::Indirect(ind)) =>
-                try!(self.read_indirect(try!(ind), out)),
+                try!(self.read_indirect(&try!(ind), out)),
             Err(e) =>
                 return Err(Error::new(io::Error::new(io::ErrorKind::Other, e)))
         }
@@ -142,26 +153,23 @@ impl Reader {
     }
 
     fn dataref_read<'c,'b>(&'c self, dr: cafs_capnp::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
-        let w /*: Result<cafs_capnp::reference::data_ref::WhichReader<'b>, ::capnp::NotInSchema>*/ = dr.which();
-        unimplemented!();
-        /*match w  {
+        use ToOwnedMessage;
+        match dr.which()  {
             Ok(data_ref::Block(Ok(b))) => {
-                let block = b.clone();
+                let block = try!(b.to_owned_message());
                 Ok(Box::new(BlockReader{ reader: self.clone(), bref: block, data: None, position: 0 }))
             },
             Ok(data_ref::Inline(i)) =>
-                Ok(Box::new(io::Cursor::new(try!(i)))),
+              Ok(Box::new(io::Cursor::new(try!(i).to_vec()))),
+            
             Ok(data_ref::Indirect(ind)) => {
-                let indir_bytes = try!(self.read_blockref_vec(try!(ind)));
-                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(indir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
-                let b : cafs_capnp::indirect_block::Reader = try!(message_reader.get_root());
-                //let b = try!(self.read_indir(try!(ind)));
-                Ok(Box::new(IndirectBlockReader{ reader: self.clone(), indirect_block: b, index: 0, r: Box::new(io::empty()) }))
+                let indir = try!(self.read_indir(&try!(ind)));
+                Ok(Box::new(IndirectBlockReader{ reader: self.clone(), indirect_block: indir, index: 0, r: Box::new(io::empty()) }))
             },
             Err(e) =>
-                Err(io::Error::new(io::ErrorKind::Other, e))
+                Err(Error::other(e)),
+            _ => unimplemented!()
         }
-         */
     }
 
     pub fn read_dataref_vec(&self, r: cafs_capnp::reference::data_ref::Reader) -> Result<Vec<u8>> {

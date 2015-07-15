@@ -48,19 +48,34 @@ pub fn message_to_bytes<M>(message: &M) -> Vec<u8> where M: capnp::MessageBuilde
 }
 
 pub struct OwnedMessage<T> {
-   message: ::capnp::OwnedSpaceMessageReader,
-   phantom_data: ::std::marker::PhantomData<T>,
+    message: ::capnp::OwnedSpaceMessageReader,
+    phantom_data: ::std::marker::PhantomData<T>
 }
 
 impl <'a, T> OwnedMessage <T> where T: ::capnp::traits::FromPointerReader<'a> {
     pub fn new(mr: ::capnp::OwnedSpaceMessageReader) -> OwnedMessage<T> {
-        OwnedMessage {
-            message: mr,
-            phantom_data: ::std::marker::PhantomData
-        }
+        OwnedMessage { message: mr, phantom_data: ::std::marker::PhantomData }
     }
-   pub fn get(&'a self) -> ::capnp::Result<T> {
-     use capnp::MessageReader;
-     self.message.get_root()
-   }
+    pub fn get(&'a self) -> ::capnp::Result<T> {
+        use capnp::MessageReader;
+        self.message.get_root()
+    }
+}
+
+
+trait ToOwnedMessage<T> {
+    fn to_owned_message(self) -> capnp::Result<OwnedMessage<T>>;
+}
+
+impl<'a,'b> ToOwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>> for cafs_capnp::reference::block_ref::Reader<'b> {
+    fn to_owned_message(self) -> capnp::Result<OwnedMessage<cafs_capnp::reference::block_ref::Reader<'a>>> {
+        let mut buffer = Vec::new();
+        {
+            let mut message = ::capnp::MallocMessageBuilder::new_default();
+            message.set_root(self);
+            capnp::serialize::write_message(&mut buffer, &message);
+        }
+        let mr = capnp::serialize::read_message(&mut io::Cursor::new(buffer), capnp::message::DEFAULT_READER_OPTIONS);
+        Ok(OwnedMessage::new(try!(mr)))
+    }
 }
