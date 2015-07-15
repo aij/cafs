@@ -19,11 +19,9 @@ use Result;
 use Error;
 use OwnedMessage;
 
-
 use capnp;
 use capnp::message::MessageReader;
 
-//extern crate core;
 
 #[derive(Clone)]
 pub struct Reader {
@@ -53,7 +51,7 @@ impl<'a> Read for BlockReader<'a> {
                 let read = min(buf.len(), data.len()-self.position);
                 // TODO: Use http://doc.rust-lang.org/std/primitive.slice.html#method.clone_from_slice once it is stable.
                 let mut count = 0;
-                while count < buf.len() && self.position <= data.len() {
+                while count < buf.len() && self.position < data.len() {
                     buf[count] = data[self.position];
                     count += 1;
                     self.position += 1;
@@ -68,7 +66,7 @@ impl<'a> Read for BlockReader<'a> {
 pub struct IndirectBlockReader<'a> {
     reader: Reader,
     indirect_block: OwnedMessage<proto::indirect_block::Reader<'a>>,
-    index: u32,
+    next_index: u32,
     r: Box<Read>,
 }
 
@@ -76,12 +74,12 @@ impl<'a> Read for IndirectBlockReader<'a> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let bytes = try!(self.r.read(buf));
         if bytes == 0 && buf.len() != 0 {
-            self.index += 1;
             let retry = { // Scope to limit the borrow.
                 let indir = try!(capnp_result_to_io(self.indirect_block.get()));
                 let subs = try!(capnp_result_to_io(indir.get_subblocks()));
-                if self.index < subs.len() {
-                    self.r = try!(self.reader.dataref_read(subs.get(self.index)));
+                if self.next_index < subs.len() {
+                    self.r = try!(self.reader.dataref_read(subs.get(self.next_index)));
+                    self.next_index += 1;
                     true
                 }
                 else { false }
@@ -116,10 +114,6 @@ impl Reader {
         let raw = try!(self.read_rawblock(h));
         Ok(raw)
     }
-    fn read_blockref(&self, r: &proto::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
-        try!(out.write_all(&try!(self.read_blockref_vec(r))));
-        Ok(())
-    }
 
     fn read_indir<'a,'b>(&self, bref: &proto::reference::block_ref::Reader<'a>) -> Result<OwnedMessage<proto::indirect_block::Reader<'b>>> {
         let indir_bytes = try!(self.read_blockref_vec(bref));
@@ -128,31 +122,7 @@ impl Reader {
         Ok(OwnedMessage::new(message_reader))
     }
 
-    fn read_indirect(&self, bref: &proto::reference::block_ref::Reader, out: &mut io::Write) -> Result<()> {
-        let indir = try!(self.read_indir(bref));
-        let reader = try!(indir.get());
-        let subs_r = reader.get_subblocks();
-        let subs = try!(subs_r);
-        for sb in subs.iter() {
-            try!(self.read_dataref(sb, out));
-        }
-        Ok(())
-    }
-    pub fn read_dataref(&self, r: proto::reference::data_ref::Reader, out: &mut io::Write) -> Result<()> {
-        match r.which() {
-            Ok(data_ref::Block(b)) =>
-                try!(self.read_blockref(&try!(b), out)),
-            Ok(data_ref::Inline(i)) =>
-                try!(out.write_all(&try!(i))),
-            Ok(data_ref::Indirect(ind)) =>
-                try!(self.read_indirect(&try!(ind), out)),
-            Err(e) =>
-                return Err(Error::new(io::Error::new(io::ErrorKind::Other, e)))
-        }
-        Ok(())
-    }
-
-    fn dataref_read<'c,'b>(&'c self, dr: proto::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
+    pub fn dataref_read<'c,'b>(&'c self, dr: proto::reference::data_ref::Reader<'b>) -> Result<Box<Read>> {
         use ToOwnedMessage;
         match dr.which()  {
             Ok(data_ref::Block(Ok(b))) => {
@@ -164,7 +134,7 @@ impl Reader {
             
             Ok(data_ref::Indirect(ind)) => {
                 let indir = try!(self.read_indir(&try!(ind)));
-                Ok(Box::new(IndirectBlockReader{ reader: self.clone(), indirect_block: indir, index: 0, r: Box::new(io::empty()) }))
+                Ok(Box::new(IndirectBlockReader{ reader: self.clone(), indirect_block: indir, next_index: 0, r: Box::new(io::empty()) }))
             },
             Err(e) =>
                 Err(Error::other(e)),
@@ -172,15 +142,11 @@ impl Reader {
         }
     }
 
-    pub fn read_dataref_vec(&self, r: proto::reference::data_ref::Reader) -> Result<Vec<u8>> {
-        let mut out = vec![];
-        try!(self.read_dataref(r, &mut out));
-        Ok(out)
-    }
-
     fn extract_file_data(&self, r: proto::reference::data_ref::Reader, create: bool, out: &Path) -> Result<()> {
         let mut file = try!(File::create(out));
-        self.read_dataref(r, &mut file)
+        let mut read = try!(self.dataref_read(r));
+        let bytes = try!(io::copy(&mut read, &mut file));
+        Ok(())
     }
 
     pub fn extract_path(&self, r: proto::reference::Reader, create: bool, out: &Path) -> Result<()> {
@@ -190,10 +156,9 @@ impl Reader {
             Ok(File(Ok(dr))) =>
                 self.extract_file_data(dr, create, out),
             Ok(Directory(Ok(dr))) => {
-                // TODO: Shouldn't need to store entire directory in memory.
-                let dir_bytes = try!(self.read_dataref_vec(dr));
-                println!("got bytes");
-                let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(dir_bytes), capnp::message::DEFAULT_READER_OPTIONS));
+                let mut dir_read = try!(self.dataref_read(dr));
+                let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
+                let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
                 let reader : proto::directory::Reader = try!(message_reader.get_root());
                 if create {
                     try!(fs::create_dir(out));

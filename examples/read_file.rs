@@ -47,9 +47,10 @@ fn main() {
     let reader = cafs::Reader::new(stor);
     let mut message = MallocMessageBuilder::new_default();
     let dataref = mk_dataref(args, &mut message);
-    let res = reader.read_dataref(dataref, &mut ::std::io::stdout());
+    let mut read = reader.dataref_read(dataref).unwrap();
+    let res = ::std::io::copy(&mut read, &mut ::std::io::stdout());
     match res {
-        Ok(()) => (),
+        Ok(_) => (),
         Err(_) =>
             println_err!("{:?}", res),
     }
