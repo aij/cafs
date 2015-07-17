@@ -16,7 +16,7 @@ path = "src/main.rs"
 
 leveldb = "*"
 db-key = "^0.0.5"
-openssl = "^0.6.0"
+openssl = "^0.6.4"
 capnp = "*"
 rustc-serialize = "^0.3"
 backtrace = "^0.1"
