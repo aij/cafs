@@ -29,6 +29,8 @@ pub use sha256::Sha256;
 
 pub use error::{Result, Error};
 
+static AES256_IV:[u8;16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
 impl<'a> fmt::Display for proto::reference::Reader<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         //use proto::reference::Builder;

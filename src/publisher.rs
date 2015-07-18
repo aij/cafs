@@ -18,11 +18,21 @@ const BLOCK_SIZE:usize = 256*1024;
 
 pub struct Publisher {
     storage: storage_pool_leveldb::StoragePoolLeveldb, // TODO: Abstract this.
+    options: Options,
+}
+
+pub struct Options {
+    enc_type: EncType,
+}
+
+pub enum EncType {
+    None,
+    AES256, // Covergent AES_256_CBC with SHA-2 256 as key.
 }
 
 impl Publisher {
     pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb) -> Publisher {
-        Publisher{ storage: s }
+        Publisher{ storage: s, options: Options{ enc_type: EncType::AES256 } }
     }
     fn save_raw_block(&self, block:&[u8]) -> Result<Sha256> {
         match self.storage.put(block) {
@@ -31,14 +41,37 @@ impl Publisher {
         }
     }
 
-    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut proto::reference::data_ref::Builder<'a>) -> Result<&'b proto::reference::data_ref::Builder<'a>> {
+    fn save_block(&self, block:&[u8]) -> Result<Box<Fn(&mut proto::reference::block_ref::Builder)>> {
+        // On success, returns a function to set a block_ref::Builder to point to the stored data.
+        let size = block.len() as u64;
+        match self.options.enc_type {
+            EncType::None => {
+                let hash = try!(self.save_raw_block(block));
+                Ok(Box::new(move |b: &mut proto::reference::block_ref::Builder| {
+                    b.borrow().init_rawblock().set_sha256(hash.as_slice());
+                    b.borrow().set_size(size);
+                }))
+            },
+            EncType::AES256 => {
+                use openssl::crypto::symm::{encrypt, Type};
+                use AES256_IV;
+                let key = Sha256::of_bytes(block);
+                let ct = encrypt(Type::AES_256_CBC, key.as_slice(), AES256_IV, block);
+                let hash = try!(self.save_raw_block(&ct));
+                Ok(Box::new(move |b: &mut proto::reference::block_ref::Builder| {
+                    b.borrow().init_rawblock().set_sha256(hash.as_slice());
+                    b.borrow().get_enc().set_aes(key.as_slice());
+                    b.borrow().set_size(size);
+                }))
+            }
+        }
+    }
+    fn save_data<'a,'b>(&self, data:&[u8], dataref: &'b mut proto::reference::data_ref::Builder<'a>) -> Result<()> {
         // FIXME: Assumes data < BLOCK_SIZE
-        let hash = try!(self.save_raw_block(data));
-        {
-            let mut rawblock = dataref.borrow().init_block().init_rawblock();
-            rawblock.set_sha256(hash.as_slice());
-        };
-        Ok(dataref)
+        let mut br = dataref.borrow().init_block();
+        let f = try!(self.save_block(data));
+        f(&mut br);
+        Ok(())
     }
     /*
     fn save_block(&self, block:&[u8], res: &mut proto::reference::block_ref::Builder) -> Result<&proto::reference::block_ref::Builder, Error> {
@@ -48,7 +81,7 @@ impl Publisher {
         
     }
      */
-    pub fn export_file(&self, path:&Path) -> Result<Sha256> {
+    pub fn export_file(&self, path:&Path) -> Result<Box<Fn(&mut proto::reference::block_ref::Builder)>> {
         let mut f = try!(File::open(path));
         let mut buf = [0u8; BLOCK_SIZE];
         let mut message = MallocMessageBuilder::new_default();
@@ -61,8 +94,8 @@ impl Publisher {
             // BLOCK_SIZE bytes unless we are at the end of the file?
             let n = try!(f.read(&mut buf));
             if n == 0 { break; }
-            let hash = try!(self.save_raw_block(&buf[0..n]));
-            blocks.push((hash,n));
+            let fun = try!(self.save_block(&buf[0..n]));
+            blocks.push(fun);
         }
 
         { // Use a Scope to limit lifetime of the borrow.
@@ -70,12 +103,7 @@ impl Publisher {
             for i in 0 .. blocks.len() {
                 use db_key::Key;
                 let mut block = sub.borrow().get(i as u32).init_block();
-                {
-                    let mut rawblock = block.borrow().init_rawblock();
-                    //blocks[i].0.as_slice(|s| rawblock.set_sha256(s));
-                    rawblock.set_sha256(blocks[i].0.as_slice());
-                }
-                block.set_size(blocks[i].1 as u64);
+                blocks[i](&mut block);
             }
         }
         }
@@ -83,17 +111,15 @@ impl Publisher {
         {
             serialize_packed::write_message(&mut encoded, &mut message);
         }
-        self.save_raw_block(&encoded)
+        self.save_block(&encoded)
     }
 
     pub fn save_file<'a,'b>(&self, path:&Path, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
-        //let mut message = MallocMessageBuilder::new_default();
-        let hash = try!(self.export_file(path));
-        //let mut refb = message.init_root::<proto::reference::Builder>();
+        let fun = try!(self.export_file(path));
         {
             let mut dataref = refb.borrow().init_file();
-            let mut rawblock = dataref.borrow().init_indirect().init_rawblock();
-            rawblock.set_sha256(hash.as_slice());
+            let mut br = dataref.borrow().init_indirect();
+            fun(&mut br)
 
         }
         Ok(refb)

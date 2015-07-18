@@ -108,11 +108,29 @@ impl Reader {
         }
     }
     fn read_blockref_vec(&self, r: &proto::reference::block_ref::Reader) -> Result<Vec<u8>> {
-        assert!(!r.get_enc().has_aes()); // FIXME: Implement.
+        use proto::reference::block_ref;
         let hb = try!(try!(r.get_rawblock()).get_sha256());
         let h = Sha256::from_u8(hb);
-        let raw = try!(self.read_rawblock(h));
-        Ok(raw)
+        let raw = try!(self.read_rawblock(h.clone()));
+        match r.get_enc().which() {
+            Ok(block_ref::enc::None(())) => {
+                Ok(raw)
+            }
+            Ok(block_ref::enc::Aes(k)) => {
+                use openssl::crypto::symm::{decrypt, Type};
+                use AES256_IV;
+                let key = try!(k);
+                let plain = decrypt(Type::AES_256_CBC, key, AES256_IV, &raw);
+                let hash = Sha256::of_bytes(&plain);
+                if (r.get_size() != 0) {
+                    assert_eq!(r.get_size(), plain.len() as u64);
+                }
+                assert_eq!(hash, Sha256::from_u8(key)); // FIXME
+                Ok(plain)
+            }
+            Err(e) =>
+                Err(Error::other(e)),
+        }
     }
 
     fn read_indir<'a,'b>(&self, bref: &proto::reference::block_ref::Reader<'a>) -> Result<OwnedMessage<proto::indirect_block::Reader<'b>>> {

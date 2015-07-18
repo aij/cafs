@@ -5,7 +5,7 @@ use std::fmt;
 use rustc_serialize::hex::{ToHex, FromHex};
 
 
-#[derive(Clone,Debug)]
+#[derive(Clone)]
 pub struct Sha256{
     bits : [u8;32]
 }
@@ -39,6 +39,13 @@ impl Sha256 {
     }
 }
 
+impl PartialEq<Sha256> for Sha256 {
+    fn eq(&self, other: &Sha256) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+impl Eq for Sha256 {}
+
 impl ToHex for Sha256 {
     fn to_hex(&self) -> String {
         self.bits.to_hex()
@@ -51,4 +58,10 @@ impl fmt::Display for Sha256 {
         f.write_str(&self.to_hex())
     }
 
+}
+
+impl fmt::Debug for Sha256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(self, f)
+   }
 }
