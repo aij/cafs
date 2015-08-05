@@ -41,12 +41,31 @@ impl std::convert::From<Error> for io::Error {
 }
 
 //impl std::convert::From<std::error::Error> for Error {
+
 impl std::convert::From<capnp::Error> for Error {
     fn from(e: capnp::Error) -> Error {
         Error::other(e)
     }
 }
 
+impl std::convert::From<::sqlite3::SqliteError> for Error {
+    fn from(e: ::sqlite3::SqliteError) -> Error {
+        Error::other(e)
+   }
+}
+
+impl std::convert::From<::openssl::ssl::error::SslError> for Error {
+    fn from(e: ::openssl::ssl::error::SslError) -> Error {
+        Error::other(e)
+   }
+}
+
+/*
+impl<E> std::convert::From<E> for Error  where E: Into<Box<std::error::Error + Send + Sync>> {
+    fn from(e: E) -> Error {
+        Error::other(e)
+   }
+}*/
     
 fn get_backtrace_now() -> String {
     let mut bt = vec![];

@@ -6,9 +6,11 @@ use std::fs::{DirEntry, File, FileType, OpenOptions};
 
 use capnp::{MessageBuilder, MallocMessageBuilder};
 use capnp::serialize_packed;
+use openssl::crypto::pkey::PKey;
 
 use Result;
 use Error;
+use VolDb;
 use proto;
 use storage_pool_leveldb;
 use sha256::Sha256;
@@ -18,6 +20,7 @@ const BLOCK_SIZE:usize = 256*1024;
 
 pub struct Publisher {
     storage: storage_pool_leveldb::StoragePoolLeveldb, // TODO: Abstract this.
+    voldb: Box<VolDb>,
     options: Options,
 }
 
@@ -31,8 +34,8 @@ pub enum EncType {
 }
 
 impl Publisher {
-    pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb) -> Publisher {
-        Publisher{ storage: s, options: Options{ enc_type: EncType::AES256 } }
+    pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb, voldb: Box<VolDb>) -> Publisher {
+        Publisher{ storage: s, voldb: voldb, options: Options{ enc_type: EncType::AES256 } }
     }
     fn save_raw_block(&self, block:&[u8]) -> Result<Sha256> {
         match self.storage.put(block) {
@@ -170,5 +173,38 @@ impl Publisher {
     pub fn save_path<'a, 'b>(&self, path:&Path, refb: &'b mut proto::reference::Builder<'a>) -> Result<&'b mut proto::reference::Builder<'a>> {
         let md = try!(fs::symlink_metadata(path));
         self.save_path_with_type(path, md.file_type(), refb)
+    }
+
+    fn mk_volume_header(&self, key: &PKey, volid: &[u8], serial: i64, recipients: &[PKey], root: &Fn(&mut proto::reference::Builder) -> Result<()>) -> Result<Vec<u8>> {
+        // If recipients is empty, volume is public.
+        let mut message = MallocMessageBuilder::new_default();
+        {
+            let mut vh = message.init_root::<proto::volume_header::Builder>();
+            vh.set_volume_id(volid);
+            vh.set_serial(serial);
+            if 0 == recipients.len() {
+                try!(root(&mut vh.get_contents().init_public()));
+            } else {
+                unimplemented!()
+            }
+        }
+        let mut bytes = Vec::new();
+        try!(::capnp::serialize::write_message(&mut bytes, &message));
+        Ok(bytes)
+    }
+    pub fn save_volume(&self, key: &PKey, volid: &[u8], serial: i64, recipients: &[PKey], root: &Fn(&mut proto::reference::Builder) -> Result<()>) -> Result<()> {
+        let to_sign = try!(self.mk_volume_header(key, volid, serial, recipients, root));
+        let h = Sha256::of_bytes(&to_sign);
+        // TODO: Do we want to add a prefix to the header before signing?
+        let sig = key.sign(h.as_slice());
+        let mut message = MallocMessageBuilder::new_default();
+        {
+            let mut vr = message.init_root::<proto::volume_root::Builder>();
+            vr.set_header(&to_sign);
+            vr.set_signature(&sig);
+        }
+        let mut bytes = Vec::new();
+        try!(::capnp::serialize_packed::write_message(&mut bytes, &message));
+        self.voldb.save_volume(key, &bytes)
     }
 }

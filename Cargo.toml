@@ -20,6 +20,7 @@ openssl = "^0.6.4"
 capnp = "*"
 rustc-serialize = "^0.3"
 backtrace = "^0.1"
+rust-sqlite = "0.2.0"
 
 [dev-dependencies]
 docopt = "*"

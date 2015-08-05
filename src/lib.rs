@@ -3,14 +3,18 @@ extern crate db_key;
 extern crate openssl;
 extern crate capnp;
 extern crate rustc_serialize;
+extern crate sqlite3;
 
 use rustc_serialize::base64;
 use rustc_serialize::base64::ToBase64;
 use std::fmt;
 use std::io;
+use std::path::{Path, PathBuf};
 use capnp::message::MessageBuilder;
 
 pub mod storage_pool_leveldb;
+mod voldb_sqlite3;
+pub use voldb_sqlite3::VolDbSqlite;
 mod sha256;
 mod publisher;
 mod reader;
@@ -26,10 +30,23 @@ pub use proto as cafs_capnp; // Because the generated code refers to itself as :
 pub use publisher::Publisher;
 pub use reader::Reader;
 pub use sha256::Sha256;
+pub use openssl::crypto::pkey::PKey;
 
 pub use error::{Result, Error};
 
 static AES256_IV:[u8;16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+pub fn private_key_dir() -> PathBuf {
+    let mut h = ::std::env::home_dir().unwrap_or_else(|| Path::new("/etc").to_path_buf());
+    h.push(".cafs");
+    h.push("private_keys");
+    h
+}
+
+pub trait VolDb {
+    fn save_volume(&self, key: &PKey, volume_root_bytes: &[u8]) -> Result<()>;
+    fn find_latest<'a,'b,'c>(&self, key: &'a PKey, volid: &'b [u8], min_serial: i64) -> Result<Option<OwnedMessage<proto::volume_root::Reader<'c>>>>;
+}
 
 impl<'a> fmt::Display for proto::reference::Reader<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

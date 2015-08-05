@@ -4,6 +4,7 @@ use std::fmt;
 
 use rustc_serialize::hex::{ToHex, FromHex};
 
+use PKey;
 
 #[derive(Clone)]
 pub struct Sha256{
@@ -36,6 +37,10 @@ impl Sha256 {
             Ok(v) => Sha256::from_u8(&v),
             Err(e) => panic!("Parse error from hex: {}", e)
         }
+    }
+    pub fn pkey_fingerprint(k: &PKey) -> Self {
+        // This is consistent with `openssl rsa -in foo.pem  -pubout -outform DER | sha256sum -`
+        Sha256::of_bytes(&k.save_pub())
     }
 }
 
