@@ -14,10 +14,10 @@ path = "src/main.rs"
 
 [dependencies]
 
-leveldb = "*"
+leveldb = "0.8.3"
 db-key = "^0.0.5"
 openssl = "^0.6.4"
-capnp = "*"
+capnp = "^0.2.4"
 rustc-serialize = "^0.3"
 backtrace = "^0.1"
 rust-sqlite = "0.2.0"
