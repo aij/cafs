@@ -4,7 +4,7 @@ use std::io;
 use sqlite3;
 use sqlite3::{DatabaseConnection, Query, ResultRowAccess, StatementUpdate, SqliteResult, SqliteError};
 use capnp;
-use capnp::MessageReader;
+use capnp::message::Reader;
 
 use Result;
 use VolDb;

@@ -4,7 +4,7 @@ use std::io::Read;
 use std::fs;
 use std::fs::{DirEntry, File, FileType, OpenOptions};
 
-use capnp::{MessageBuilder, MallocMessageBuilder};
+use capnp::message::{Builder, HeapAllocator, Reader};
 use capnp::serialize_packed;
 use openssl::crypto::pkey::PKey;
 
@@ -87,7 +87,7 @@ impl Publisher {
     pub fn export_file(&self, path:&Path) -> Result<Box<Fn(&mut proto::reference::block_ref::Builder)>> {
         let mut f = try!(File::open(path));
         let mut buf = [0u8; BLOCK_SIZE];
-        let mut message = MallocMessageBuilder::new_default();
+        let mut message = Builder::new_default();
         {
         let mut indir = message.init_root::<proto::indirect_block::Builder>();
         let mut blocks = vec![];
@@ -135,7 +135,7 @@ impl Publisher {
             .flat_map(|e| e) // FIXME: Ignores error entries.
             .collect();
         
-        let mut message = MallocMessageBuilder::new_default();
+        let mut message = Builder::new_default();
         {
             let mut dirb = message.init_root::<proto::directory::Builder>();
             let mut files = dirb.init_files(readir.len() as u32);
@@ -177,7 +177,7 @@ impl Publisher {
 
     fn mk_volume_header(&self, key: &PKey, volid: &[u8], serial: i64, recipients: &[PKey], root: &Fn(&mut proto::reference::Builder) -> Result<()>) -> Result<Vec<u8>> {
         // If recipients is empty, volume is public.
-        let mut message = MallocMessageBuilder::new_default();
+        let mut message = Builder::new_default();
         {
             let mut vh = message.init_root::<proto::volume_header::Builder>();
             vh.set_volume_id(volid);
@@ -197,7 +197,7 @@ impl Publisher {
         let h = Sha256::of_bytes(&to_sign);
         // TODO: Do we want to add a prefix to the header before signing?
         let sig = key.sign(h.as_slice());
-        let mut message = MallocMessageBuilder::new_default();
+        let mut message = Builder::new_default();
         {
             let mut vr = message.init_root::<proto::volume_root::Builder>();
             vr.set_header(&to_sign);

@@ -20,7 +20,7 @@ use Error;
 use OwnedMessage;
 
 use capnp;
-use capnp::message::MessageReader;
+use capnp::message::Reader as PReader;
 
 
 #[derive(Clone)]

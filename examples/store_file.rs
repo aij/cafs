@@ -32,7 +32,7 @@ fn main() {
     println!("{:?}", args);
 
     let stor = StoragePoolLeveldb::open(Path::new(&args.arg_storage_pool), args.flag_create).unwrap();
-    if (args.arg_file != "") {
+    if args.arg_file != "" {
         let publisher = cafs::Publisher::new(stor);
         let res = publisher.export_file(Path::new(&args.arg_file));
         match res {

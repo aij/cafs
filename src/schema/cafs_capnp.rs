@@ -13,32 +13,44 @@ pub mod reference {
 
   pub use self::Which::{File,Directory,Volume};
 
+  pub struct Owned;
+  impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
   #[derive(Clone, Copy)]
   pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-  impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+  {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-      Reader { reader : reader }
+  impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+  {
+    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+      Reader { reader : reader,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+  impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+  {
+    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
     }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-    fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+  impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+  {
+    fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+      self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+    }
   }
 
-  impl <'a> Reader<'a> {
-    pub fn borrow<'b>(&'b self) -> Reader<'b> {
-      Reader { reader : self.reader}
+  impl <'a,> Reader<'a,>
+  {
+    pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+      Reader { .. *self }
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -57,7 +69,7 @@ pub mod reference {
       !self.reader.get_pointer_field(0).is_null()
     }
     #[inline]
-    pub fn which(self) -> ::std::result::Result<WhichReader<'a>, ::capnp::NotInSchema> {
+    pub fn which(self) -> ::std::result::Result<WhichReader<'a,>, ::capnp::NotInSchema> {
       match self.reader.get_data_field::<u16>(0) {
         0 => {
           return ::std::result::Result::Ok(File(
@@ -80,50 +92,62 @@ pub mod reference {
   }
 
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-  impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+  {
     #[inline]
     fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
-  impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+   {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-      Builder { builder : builder }
+  impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+   {
+    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+      Builder { builder : builder,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+  impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+   {
+    fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+      self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+    }
+  }
+
+  impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+   {
+    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
       ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
     }
-    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
     }
   }
 
-  impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+  impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+   {
+    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-    fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-  }
-
-  impl <'a> Builder<'a> {
-    pub fn as_reader(self) -> Reader<'a> {
+  impl <'a,> Builder<'a,>
+   {
+    pub fn as_reader(self) -> Reader<'a,> {
       ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
-    pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-      Builder { builder : self.builder}
+    pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+      Builder { .. *self }
+    }
+    pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+      ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
       self.builder.as_reader().total_size()
     }
     #[inline]
-    pub fn set_file(&mut self, value : ::cafs_capnp::reference::data_ref::Reader) -> Result<()> {
+    pub fn set_file<'b>(&mut self, value : ::cafs_capnp::reference::data_ref::Reader<'b>) -> Result<()> {
       self.builder.set_data_field::<u16>(0, 0);
       ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
     }
@@ -137,7 +161,7 @@ pub mod reference {
       !self.builder.get_pointer_field(0).is_null()
     }
     #[inline]
-    pub fn set_directory(&mut self, value : ::cafs_capnp::reference::data_ref::Reader) -> Result<()> {
+    pub fn set_directory<'b>(&mut self, value : ::cafs_capnp::reference::data_ref::Reader<'b>) -> Result<()> {
       self.builder.set_data_field::<u16>(0, 1);
       ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
     }
@@ -151,7 +175,7 @@ pub mod reference {
       !self.builder.get_pointer_field(0).is_null()
     }
     #[inline]
-    pub fn set_volume(&mut self, value : ::cafs_capnp::reference::volume_ref::Reader) -> Result<()> {
+    pub fn set_volume<'b>(&mut self, value : ::cafs_capnp::reference::volume_ref::Reader<'b>) -> Result<()> {
       self.builder.set_data_field::<u16>(0, 2);
       ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
     }
@@ -165,7 +189,7 @@ pub mod reference {
       !self.builder.get_pointer_field(0).is_null()
     }
     #[inline]
-    pub fn which(self) -> ::std::result::Result<WhichBuilder<'a>, ::capnp::NotInSchema> {
+    pub fn which(self) -> ::std::result::Result<WhichBuilder<'a,>, ::capnp::NotInSchema> {
       match self.builder.get_data_field::<u16>(0) {
         0 => {
           return ::std::result::Result::Ok(File(
@@ -190,7 +214,7 @@ pub mod reference {
   pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
   impl FromTypelessPipeline for Pipeline {
     fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-      Pipeline { _typeless : typeless }
+      Pipeline { _typeless : typeless,  }
     }
   }
   impl Pipeline {
@@ -205,8 +229,8 @@ pub mod reference {
     Directory(A1),
     Volume(A2),
   }
-  pub type WhichReader<'a> = Which<Result<::cafs_capnp::reference::data_ref::Reader<'a>>,Result<::cafs_capnp::reference::data_ref::Reader<'a>>,Result<::cafs_capnp::reference::volume_ref::Reader<'a>>>;
-  pub type WhichBuilder<'a> = Which<Result<::cafs_capnp::reference::data_ref::Builder<'a>>,Result<::cafs_capnp::reference::data_ref::Builder<'a>>,Result<::cafs_capnp::reference::volume_ref::Builder<'a>>>;
+  pub type WhichReader<'a,> = Which<Result<::cafs_capnp::reference::data_ref::Reader<'a>>,Result<::cafs_capnp::reference::data_ref::Reader<'a>>,Result<::cafs_capnp::reference::volume_ref::Reader<'a>>>;
+  pub type WhichBuilder<'a,> = Which<Result<::cafs_capnp::reference::data_ref::Builder<'a>>,Result<::cafs_capnp::reference::data_ref::Builder<'a>>,Result<::cafs_capnp::reference::volume_ref::Builder<'a>>>;
 
   pub mod raw_block_ref {
     #![allow(unused_imports)]
@@ -216,32 +240,44 @@ pub mod reference {
     use capnp::traits::{FromStructBuilder, FromStructReader};
     use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -257,43 +293,55 @@ pub mod reference {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -319,7 +367,7 @@ pub mod reference {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
@@ -339,32 +387,44 @@ pub mod reference {
     use capnp::traits::{FromStructBuilder, FromStructReader};
     use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -388,43 +448,55 @@ pub mod reference {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -435,7 +507,7 @@ pub mod reference {
         ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(0))
       }
       #[inline]
-      pub fn set_rawblock(&mut self, value : ::cafs_capnp::reference::raw_block_ref::Reader) -> Result<()> {
+      pub fn set_rawblock<'b>(&mut self, value : ::cafs_capnp::reference::raw_block_ref::Reader<'b>) -> Result<()> {
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
       }
       #[inline]
@@ -468,11 +540,11 @@ pub mod reference {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
-      pub fn get_rawblock(&self) -> ::cafs_capnp::reference::raw_block_ref::Pipeline {
+      pub fn get_rawblock(&self) -> ::cafs_capnp::reference::raw_block_ref::Pipeline<> {
         FromTypelessPipeline::new(self._typeless.get_pointer_field(0))
       }
       pub fn get_enc(&self) -> ::cafs_capnp::reference::block_ref::enc::Pipeline {
@@ -495,32 +567,44 @@ pub mod reference {
 
       pub use self::Which::{None,Aes};
 
+      pub struct Owned;
+      impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+      impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+      impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
       #[derive(Clone, Copy)]
       pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-      impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+      impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+      {
         #[inline]
         fn type_id() -> u64 { _private::TYPE_ID }
       }
-      impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-          Reader { reader : reader }
+      impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+      {
+        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+          Reader { reader : reader,  }
         }
       }
 
-      impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-        fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+      impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+      {
+        fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
           ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
         }
       }
 
-      impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-        fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+      impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+      {
+        fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+          self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+        }
       }
 
-      impl <'a> Reader<'a> {
-        pub fn borrow<'b>(&'b self) -> Reader<'b> {
-          Reader { reader : self.reader}
+      impl <'a,> Reader<'a,>
+      {
+        pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+          Reader { .. *self }
         }
 
         pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -531,7 +615,7 @@ pub mod reference {
           !self.reader.get_pointer_field(1).is_null()
         }
         #[inline]
-        pub fn which(self) -> ::std::result::Result<WhichReader<'a>, ::capnp::NotInSchema> {
+        pub fn which(self) -> ::std::result::Result<WhichReader<'a,>, ::capnp::NotInSchema> {
           match self.reader.get_data_field::<u16>(4) {
             0 => {
               return ::std::result::Result::Ok(None(
@@ -549,30 +633,55 @@ pub mod reference {
       }
 
       pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-      impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+      impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+      {
+        #[inline]
+        fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
+      }
+      impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+       {
         #[inline]
         fn type_id() -> u64 { _private::TYPE_ID }
       }
-      impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-          Builder { builder : builder }
+      impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+       {
+        fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+          Builder { builder : builder,  }
         }
       }
 
-      impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-        fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+      impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+       {
+        fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+          self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+        }
       }
 
-      impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-        fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
+      impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+       {
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
+          ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
+        }
+        fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
+          ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
+        }
       }
 
-      impl <'a> Builder<'a> {
-        pub fn as_reader(self) -> Reader<'a> {
+      impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+       {
+        fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
+      }
+
+      impl <'a,> Builder<'a,>
+       {
+        pub fn as_reader(self) -> Reader<'a,> {
           ::capnp::traits::FromStructReader::new(self.builder.as_reader())
         }
-        pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-          Builder { builder : self.builder}
+        pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+          Builder { .. *self }
+        }
+        pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+          ::capnp::traits::FromStructReader::new(self.builder.as_reader())
         }
 
         pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -597,7 +706,7 @@ pub mod reference {
           !self.builder.get_pointer_field(1).is_null()
         }
         #[inline]
-        pub fn which(self) -> ::std::result::Result<WhichBuilder<'a>, ::capnp::NotInSchema> {
+        pub fn which(self) -> ::std::result::Result<WhichBuilder<'a,>, ::capnp::NotInSchema> {
           match self.builder.get_data_field::<u16>(4) {
             0 => {
               return ::std::result::Result::Ok(None(
@@ -617,20 +726,22 @@ pub mod reference {
       pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
       impl FromTypelessPipeline for Pipeline {
         fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-          Pipeline { _typeless : typeless }
+          Pipeline { _typeless : typeless,  }
         }
       }
       impl Pipeline {
       }
       mod _private {
+        use capnp::private::layout;
+        pub const STRUCT_SIZE : layout::StructSize = layout::StructSize { data : 2, pointers : 2 };
         pub const TYPE_ID: u64 = 0x842fdb3ba511bfb2;
       }
       pub enum Which<A0> {
         None(()),
         Aes(A0),
       }
-      pub type WhichReader<'a> = Which<Result<data::Reader<'a>>>;
-      pub type WhichBuilder<'a> = Which<Result<data::Builder<'a>>>;
+      pub type WhichReader<'a,> = Which<Result<data::Reader<'a>>>;
+      pub type WhichBuilder<'a,> = Which<Result<data::Builder<'a>>>;
     }
   }
 
@@ -644,32 +755,44 @@ pub mod reference {
 
     pub use self::Which::{Block,Indirect,Inline};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -688,7 +811,7 @@ pub mod reference {
         !self.reader.get_pointer_field(0).is_null()
       }
       #[inline]
-      pub fn which(self) -> ::std::result::Result<WhichReader<'a>, ::capnp::NotInSchema> {
+      pub fn which(self) -> ::std::result::Result<WhichReader<'a,>, ::capnp::NotInSchema> {
         match self.reader.get_data_field::<u16>(0) {
           0 => {
             return ::std::result::Result::Ok(Block(
@@ -711,50 +834,62 @@ pub mod reference {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
         self.builder.as_reader().total_size()
       }
       #[inline]
-      pub fn set_block(&mut self, value : ::cafs_capnp::reference::block_ref::Reader) -> Result<()> {
+      pub fn set_block<'b>(&mut self, value : ::cafs_capnp::reference::block_ref::Reader<'b>) -> Result<()> {
         self.builder.set_data_field::<u16>(0, 0);
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
       }
@@ -768,7 +903,7 @@ pub mod reference {
         !self.builder.get_pointer_field(0).is_null()
       }
       #[inline]
-      pub fn set_indirect(&mut self, value : ::cafs_capnp::reference::block_ref::Reader) -> Result<()> {
+      pub fn set_indirect<'b>(&mut self, value : ::cafs_capnp::reference::block_ref::Reader<'b>) -> Result<()> {
         self.builder.set_data_field::<u16>(0, 1);
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
       }
@@ -796,7 +931,7 @@ pub mod reference {
         !self.builder.get_pointer_field(0).is_null()
       }
       #[inline]
-      pub fn which(self) -> ::std::result::Result<WhichBuilder<'a>, ::capnp::NotInSchema> {
+      pub fn which(self) -> ::std::result::Result<WhichBuilder<'a,>, ::capnp::NotInSchema> {
         match self.builder.get_data_field::<u16>(0) {
           0 => {
             return ::std::result::Result::Ok(Block(
@@ -821,7 +956,7 @@ pub mod reference {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
@@ -836,8 +971,8 @@ pub mod reference {
       Indirect(A1),
       Inline(A2),
     }
-    pub type WhichReader<'a> = Which<Result<::cafs_capnp::reference::block_ref::Reader<'a>>,Result<::cafs_capnp::reference::block_ref::Reader<'a>>,Result<data::Reader<'a>>>;
-    pub type WhichBuilder<'a> = Which<Result<::cafs_capnp::reference::block_ref::Builder<'a>>,Result<::cafs_capnp::reference::block_ref::Builder<'a>>,Result<data::Builder<'a>>>;
+    pub type WhichReader<'a,> = Which<Result<::cafs_capnp::reference::block_ref::Reader<'a>>,Result<::cafs_capnp::reference::block_ref::Reader<'a>>,Result<data::Reader<'a>>>;
+    pub type WhichBuilder<'a,> = Which<Result<::cafs_capnp::reference::block_ref::Builder<'a>>,Result<::cafs_capnp::reference::block_ref::Builder<'a>>,Result<data::Builder<'a>>>;
   }
 
   pub mod volume_ref {
@@ -848,32 +983,44 @@ pub mod reference {
     use capnp::traits::{FromStructBuilder, FromStructReader};
     use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -900,43 +1047,55 @@ pub mod reference {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -985,7 +1144,7 @@ pub mod reference {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
@@ -1006,32 +1165,44 @@ pub mod volume_root {
   use capnp::traits::{FromStructBuilder, FromStructReader};
   use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+  pub struct Owned;
+  impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
   #[derive(Clone, Copy)]
   pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-  impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+  {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-      Reader { reader : reader }
+  impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+  {
+    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+      Reader { reader : reader,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+  impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+  {
+    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
     }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-    fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+  impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+  {
+    fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+      self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+    }
   }
 
-  impl <'a> Reader<'a> {
-    pub fn borrow<'b>(&'b self) -> Reader<'b> {
-      Reader { reader : self.reader}
+  impl <'a,> Reader<'a,>
+  {
+    pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+      Reader { .. *self }
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1054,43 +1225,55 @@ pub mod volume_root {
   }
 
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-  impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+  {
     #[inline]
     fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
-  impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+   {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-      Builder { builder : builder }
+  impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+   {
+    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+      Builder { builder : builder,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+  impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+   {
+    fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+      self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+    }
+  }
+
+  impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+   {
+    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
       ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
     }
-    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
     }
   }
 
-  impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+  impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+   {
+    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-    fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-  }
-
-  impl <'a> Builder<'a> {
-    pub fn as_reader(self) -> Reader<'a> {
+  impl <'a,> Builder<'a,>
+   {
+    pub fn as_reader(self) -> Reader<'a,> {
       ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
-    pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-      Builder { builder : self.builder}
+    pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+      Builder { .. *self }
+    }
+    pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+      ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1131,7 +1314,7 @@ pub mod volume_root {
   pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
   impl FromTypelessPipeline for Pipeline {
     fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-      Pipeline { _typeless : typeless }
+      Pipeline { _typeless : typeless,  }
     }
   }
   impl Pipeline {
@@ -1151,32 +1334,44 @@ pub mod volume_header {
   use capnp::traits::{FromStructBuilder, FromStructReader};
   use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+  pub struct Owned;
+  impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
   #[derive(Clone, Copy)]
   pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-  impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+  {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-      Reader { reader : reader }
+  impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+  {
+    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+      Reader { reader : reader,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+  impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+  {
+    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
     }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-    fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+  impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+  {
+    fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+      self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+    }
   }
 
-  impl <'a> Reader<'a> {
-    pub fn borrow<'b>(&'b self) -> Reader<'b> {
-      Reader { reader : self.reader}
+  impl <'a,> Reader<'a,>
+  {
+    pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+      Reader { .. *self }
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1200,43 +1395,55 @@ pub mod volume_header {
   }
 
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-  impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+  {
     #[inline]
     fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
-  impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+   {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-      Builder { builder : builder }
+  impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+   {
+    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+      Builder { builder : builder,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+  impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+   {
+    fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+      self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+    }
+  }
+
+  impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+   {
+    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
       ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
     }
-    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
     }
   }
 
-  impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+  impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+   {
+    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-    fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-  }
-
-  impl <'a> Builder<'a> {
-    pub fn as_reader(self) -> Reader<'a> {
+  impl <'a,> Builder<'a,>
+   {
+    pub fn as_reader(self) -> Reader<'a,> {
       ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
-    pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-      Builder { builder : self.builder}
+    pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+      Builder { .. *self }
+    }
+    pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+      ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1280,7 +1487,7 @@ pub mod volume_header {
   pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
   impl FromTypelessPipeline for Pipeline {
     fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-      Pipeline { _typeless : typeless }
+      Pipeline { _typeless : typeless,  }
     }
   }
   impl Pipeline {
@@ -1302,32 +1509,44 @@ pub mod volume_header {
     use capnp::traits::{FromStructBuilder, FromStructReader};
     use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1350,43 +1569,55 @@ pub mod volume_header {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1412,7 +1643,7 @@ pub mod volume_header {
         ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(1))
       }
       #[inline]
-      pub fn set_keys(&mut self, value : data_list::Reader) -> Result<()> {
+      pub fn set_keys(&mut self, value : data_list::Reader<'a>) -> Result<()> {
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(1), value)
       }
       #[inline]
@@ -1427,7 +1658,7 @@ pub mod volume_header {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
@@ -1449,32 +1680,44 @@ pub mod volume_header {
 
     pub use self::Which::{Public,Private};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1489,7 +1732,7 @@ pub mod volume_header {
         !self.reader.get_pointer_field(1).is_null()
       }
       #[inline]
-      pub fn which(self) -> ::std::result::Result<WhichReader<'a>, ::capnp::NotInSchema> {
+      pub fn which(self) -> ::std::result::Result<WhichReader<'a,>, ::capnp::NotInSchema> {
         match self.reader.get_data_field::<u16>(4) {
           0 => {
             return ::std::result::Result::Ok(Public(
@@ -1507,37 +1750,62 @@ pub mod volume_header {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
+      #[inline]
+      fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
+    }
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
+        ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
+      }
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
+        ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
+      }
     }
 
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
+    }
+
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
         self.builder.as_reader().total_size()
       }
       #[inline]
-      pub fn set_public(&mut self, value : ::cafs_capnp::reference::Reader) -> Result<()> {
+      pub fn set_public<'b>(&mut self, value : ::cafs_capnp::reference::Reader<'b>) -> Result<()> {
         self.builder.set_data_field::<u16>(4, 0);
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(1), value)
       }
@@ -1551,7 +1819,7 @@ pub mod volume_header {
         !self.builder.get_pointer_field(1).is_null()
       }
       #[inline]
-      pub fn set_private(&mut self, value : ::cafs_capnp::volume_header::private_ref::Reader) -> Result<()> {
+      pub fn set_private<'b>(&mut self, value : ::cafs_capnp::volume_header::private_ref::Reader<'b>) -> Result<()> {
         self.builder.set_data_field::<u16>(4, 1);
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(1), value)
       }
@@ -1565,7 +1833,7 @@ pub mod volume_header {
         !self.builder.get_pointer_field(1).is_null()
       }
       #[inline]
-      pub fn which(self) -> ::std::result::Result<WhichBuilder<'a>, ::capnp::NotInSchema> {
+      pub fn which(self) -> ::std::result::Result<WhichBuilder<'a,>, ::capnp::NotInSchema> {
         match self.builder.get_data_field::<u16>(4) {
           0 => {
             return ::std::result::Result::Ok(Public(
@@ -1585,20 +1853,22 @@ pub mod volume_header {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
     }
     mod _private {
+      use capnp::private::layout;
+      pub const STRUCT_SIZE : layout::StructSize = layout::StructSize { data : 2, pointers : 2 };
       pub const TYPE_ID: u64 = 0xc8327e412fbf364f;
     }
     pub enum Which<A0,A1> {
       Public(A0),
       Private(A1),
     }
-    pub type WhichReader<'a> = Which<Result<::cafs_capnp::reference::Reader<'a>>,Result<::cafs_capnp::volume_header::private_ref::Reader<'a>>>;
-    pub type WhichBuilder<'a> = Which<Result<::cafs_capnp::reference::Builder<'a>>,Result<::cafs_capnp::volume_header::private_ref::Builder<'a>>>;
+    pub type WhichReader<'a,> = Which<Result<::cafs_capnp::reference::Reader<'a>>,Result<::cafs_capnp::volume_header::private_ref::Reader<'a>>>;
+    pub type WhichBuilder<'a,> = Which<Result<::cafs_capnp::reference::Builder<'a>>,Result<::cafs_capnp::volume_header::private_ref::Builder<'a>>>;
   }
 }
 
@@ -1610,39 +1880,51 @@ pub mod indirect_block {
   use capnp::traits::{FromStructBuilder, FromStructReader};
   use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+  pub struct Owned;
+  impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
   #[derive(Clone, Copy)]
   pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-  impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+  {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-      Reader { reader : reader }
+  impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+  {
+    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+      Reader { reader : reader,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+  impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+  {
+    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
     }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-    fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+  impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+  {
+    fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+      self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+    }
   }
 
-  impl <'a> Reader<'a> {
-    pub fn borrow<'b>(&'b self) -> Reader<'b> {
-      Reader { reader : self.reader}
+  impl <'a,> Reader<'a,>
+  {
+    pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+      Reader { .. *self }
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
       self.reader.total_size()
     }
     #[inline]
-    pub fn get_subblocks(self) -> Result<struct_list::Reader<'a,::cafs_capnp::reference::data_ref::Reader<'a>>> {
+    pub fn get_subblocks(self) -> Result<struct_list::Reader<'a,::cafs_capnp::reference::data_ref::Owned<>>> {
       ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(0))
     }
     pub fn has_subblocks(&self) -> bool {
@@ -1651,58 +1933,70 @@ pub mod indirect_block {
   }
 
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-  impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+  {
     #[inline]
     fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
-  impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+   {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-      Builder { builder : builder }
+  impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+   {
+    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+      Builder { builder : builder,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+  impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+   {
+    fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+      self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+    }
+  }
+
+  impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+   {
+    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
       ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
     }
-    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
     }
   }
 
-  impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+  impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+   {
+    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-    fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-  }
-
-  impl <'a> Builder<'a> {
-    pub fn as_reader(self) -> Reader<'a> {
+  impl <'a,> Builder<'a,>
+   {
+    pub fn as_reader(self) -> Reader<'a,> {
       ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
-    pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-      Builder { builder : self.builder}
+    pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+      Builder { .. *self }
+    }
+    pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+      ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
       self.builder.as_reader().total_size()
     }
     #[inline]
-    pub fn get_subblocks(self) -> Result<struct_list::Builder<'a,::cafs_capnp::reference::data_ref::Builder<'a>>> {
+    pub fn get_subblocks(self) -> Result<struct_list::Builder<'a,::cafs_capnp::reference::data_ref::Owned<>>> {
       ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(0))
     }
     #[inline]
-    pub fn set_subblocks(&mut self, value : struct_list::Reader<'a,::cafs_capnp::reference::data_ref::Reader<'a>>) -> Result<()> {
+    pub fn set_subblocks(&mut self, value : struct_list::Reader<'a,::cafs_capnp::reference::data_ref::Owned<>>) -> Result<()> {
       ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
     }
     #[inline]
-    pub fn init_subblocks(self, size : u32) -> struct_list::Builder<'a,::cafs_capnp::reference::data_ref::Builder<'a>> {
+    pub fn init_subblocks(self, size : u32) -> struct_list::Builder<'a,::cafs_capnp::reference::data_ref::Owned<>> {
       ::capnp::traits::FromPointerBuilder::init_pointer(self.builder.get_pointer_field(0), size)
     }
     pub fn has_subblocks(&self) -> bool {
@@ -1713,7 +2007,7 @@ pub mod indirect_block {
   pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
   impl FromTypelessPipeline for Pipeline {
     fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-      Pipeline { _typeless : typeless }
+      Pipeline { _typeless : typeless,  }
     }
   }
   impl Pipeline {
@@ -1733,39 +2027,51 @@ pub mod directory {
   use capnp::traits::{FromStructBuilder, FromStructReader};
   use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+  pub struct Owned;
+  impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+  impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
   #[derive(Clone, Copy)]
   pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-  impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+  {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-      Reader { reader : reader }
+  impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+  {
+    fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+      Reader { reader : reader,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+  impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+  {
+    fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
     }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-    fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+  impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+  {
+    fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+      self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+    }
   }
 
-  impl <'a> Reader<'a> {
-    pub fn borrow<'b>(&'b self) -> Reader<'b> {
-      Reader { reader : self.reader}
+  impl <'a,> Reader<'a,>
+  {
+    pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+      Reader { .. *self }
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
       self.reader.total_size()
     }
     #[inline]
-    pub fn get_files(self) -> Result<struct_list::Reader<'a,::cafs_capnp::directory::entry::Reader<'a>>> {
+    pub fn get_files(self) -> Result<struct_list::Reader<'a,::cafs_capnp::directory::entry::Owned<>>> {
       ::capnp::traits::FromPointerReader::get_from_pointer(&self.reader.get_pointer_field(0))
     }
     pub fn has_files(&self) -> bool {
@@ -1774,58 +2080,70 @@ pub mod directory {
   }
 
   pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-  impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+  {
     #[inline]
     fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
   }
-  impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+  impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+   {
     #[inline]
     fn type_id() -> u64 { _private::TYPE_ID }
   }
-  impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-      Builder { builder : builder }
+  impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+   {
+    fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+      Builder { builder : builder,  }
     }
   }
 
-  impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+  impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+   {
+    fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+      self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+    }
+  }
+
+  impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+   {
+    fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
       ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
     }
-    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+    fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
       ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
     }
   }
 
-  impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+  impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+   {
+    fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
   }
 
-  impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-    fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-  }
-
-  impl <'a> Builder<'a> {
-    pub fn as_reader(self) -> Reader<'a> {
+  impl <'a,> Builder<'a,>
+   {
+    pub fn as_reader(self) -> Reader<'a,> {
       ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
-    pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-      Builder { builder : self.builder}
+    pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+      Builder { .. *self }
+    }
+    pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+      ::capnp::traits::FromStructReader::new(self.builder.as_reader())
     }
 
     pub fn total_size(&self) -> Result<::capnp::MessageSize> {
       self.builder.as_reader().total_size()
     }
     #[inline]
-    pub fn get_files(self) -> Result<struct_list::Builder<'a,::cafs_capnp::directory::entry::Builder<'a>>> {
+    pub fn get_files(self) -> Result<struct_list::Builder<'a,::cafs_capnp::directory::entry::Owned<>>> {
       ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(0))
     }
     #[inline]
-    pub fn set_files(&mut self, value : struct_list::Reader<'a,::cafs_capnp::directory::entry::Reader<'a>>) -> Result<()> {
+    pub fn set_files(&mut self, value : struct_list::Reader<'a,::cafs_capnp::directory::entry::Owned<>>) -> Result<()> {
       ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(0), value)
     }
     #[inline]
-    pub fn init_files(self, size : u32) -> struct_list::Builder<'a,::cafs_capnp::directory::entry::Builder<'a>> {
+    pub fn init_files(self, size : u32) -> struct_list::Builder<'a,::cafs_capnp::directory::entry::Owned<>> {
       ::capnp::traits::FromPointerBuilder::init_pointer(self.builder.get_pointer_field(0), size)
     }
     pub fn has_files(&self) -> bool {
@@ -1836,7 +2154,7 @@ pub mod directory {
   pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
   impl FromTypelessPipeline for Pipeline {
     fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-      Pipeline { _typeless : typeless }
+      Pipeline { _typeless : typeless,  }
     }
   }
   impl Pipeline {
@@ -1855,32 +2173,44 @@ pub mod directory {
     use capnp::traits::{FromStructBuilder, FromStructReader};
     use capnp::{primitive_list, enum_list, struct_list, text_list, data_list, list_list};
 
+    pub struct Owned;
+    impl <'a> ::capnp::traits::Owned<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl <'a> ::capnp::traits::OwnedStruct<'a> for Owned { type Reader = Reader<'a>; type Builder = Builder<'a>; }
+    impl ::capnp::traits::Pipelined for Owned { type Pipeline = Pipeline; }
+
     #[derive(Clone, Copy)]
     pub struct Reader<'a> { reader : layout::StructReader<'a> }
 
-    impl <'a> ::capnp::traits::HasTypeId for Reader<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Reader<'a,>
+    {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-        Reader { reader : reader }
+    impl <'a,> ::capnp::traits::FromStructReader<'a> for Reader<'a,>
+    {
+      fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a,> {
+        Reader { reader : reader,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerReader<'a> for Reader<'a> {
-      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a>> {
+    impl <'a,> ::capnp::traits::FromPointerReader<'a> for Reader<'a,>
+    {
+      fn get_from_pointer(reader: &::capnp::private::layout::PointerReader<'a>) -> Result<Reader<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructReader::new(try!(reader.get_struct(::std::ptr::null()))))
       }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Reader<'a>> for Reader<'b> {
-      fn cast(self) -> Reader<'a> { Reader { reader : self.reader } }
+    impl <'a,> ::capnp::traits::Imbue<'a> for Reader<'a,>
+    {
+      fn imbue(&mut self, cap_table: &'a ::capnp::private::layout::CapTable) {
+        self.reader.imbue(::capnp::private::layout::CapTableReader::Plain(cap_table))
+      }
     }
 
-    impl <'a> Reader<'a> {
-      pub fn borrow<'b>(&'b self) -> Reader<'b> {
-        Reader { reader : self.reader}
+    impl <'a,> Reader<'a,>
+    {
+      pub fn borrow<'b>(&'b self) -> Reader<'b,> {
+        Reader { .. *self }
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1903,43 +2233,55 @@ pub mod directory {
     }
 
     pub struct Builder<'a> { builder : ::capnp::private::layout::StructBuilder<'a> }
-    impl <'a> ::capnp::traits::HasStructSize for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasStructSize for Builder<'a,>
+    {
       #[inline]
       fn struct_size() -> layout::StructSize { _private::STRUCT_SIZE }
     }
-    impl <'a> ::capnp::traits::HasTypeId for Builder<'a> {
+    impl <'a,> ::capnp::traits::HasTypeId for Builder<'a,>
+     {
       #[inline]
       fn type_id() -> u64 { _private::TYPE_ID }
     }
-    impl <'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-        Builder { builder : builder }
+    impl <'a,> ::capnp::traits::FromStructBuilder<'a> for Builder<'a,>
+     {
+      fn new(builder : ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a, > {
+        Builder { builder : builder,  }
       }
     }
 
-    impl <'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a> {
+    impl <'a,> ::capnp::traits::ImbueMut<'a> for Builder<'a,>
+     {
+      fn imbue_mut(&mut self, cap_table: &'a mut ::capnp::private::layout::CapTable) {
+        self.builder.imbue(::capnp::private::layout::CapTableBuilder::Plain(cap_table))
+      }
+    }
+
+    impl <'a,> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a,>
+     {
+      fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size : u32) -> Builder<'a,> {
         ::capnp::traits::FromStructBuilder::new(builder.init_struct(_private::STRUCT_SIZE))
       }
-      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a>> {
+      fn get_from_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>) -> Result<Builder<'a,>> {
         ::std::result::Result::Ok(::capnp::traits::FromStructBuilder::new(try!(builder.get_struct(_private::STRUCT_SIZE, ::std::ptr::null()))))
       }
     }
 
-    impl <'a> ::capnp::traits::SetPointerBuilder<Builder<'a>> for Reader<'a> {
-      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a>) -> Result<()> { pointer.set_struct(&value.reader) }
+    impl <'a,> ::capnp::traits::SetPointerBuilder<Builder<'a,>> for Reader<'a,>
+     {
+      fn set_pointer_builder<'b>(pointer : ::capnp::private::layout::PointerBuilder<'b>, value : Reader<'a,>) -> Result<()> { pointer.set_struct(&value.reader) }
     }
 
-    impl <'a, 'b : 'a> ::capnp::traits::CastableTo<Builder<'a>> for Builder<'b> {
-      fn cast(self) -> Builder<'a> { Builder { builder : self.builder } }
-    }
-
-    impl <'a> Builder<'a> {
-      pub fn as_reader(self) -> Reader<'a> {
+    impl <'a,> Builder<'a,>
+     {
+      pub fn as_reader(self) -> Reader<'a,> {
         ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
-      pub fn borrow<'b>(&'b mut self) -> Builder<'b> {
-        Builder { builder : self.builder}
+      pub fn borrow<'b>(&'b mut self) -> Builder<'b,> {
+        Builder { .. *self }
+      }
+      pub fn borrow_as_reader<'b>(&'b self) -> Reader<'b,> {
+        ::capnp::traits::FromStructReader::new(self.builder.as_reader())
       }
 
       pub fn total_size(&self) -> Result<::capnp::MessageSize> {
@@ -1965,7 +2307,7 @@ pub mod directory {
         ::capnp::traits::FromPointerBuilder::get_from_pointer(self.builder.get_pointer_field(1))
       }
       #[inline]
-      pub fn set_ref(&mut self, value : ::cafs_capnp::reference::Reader) -> Result<()> {
+      pub fn set_ref<'b>(&mut self, value : ::cafs_capnp::reference::Reader<'b>) -> Result<()> {
         ::capnp::traits::SetPointerBuilder::set_pointer_builder(self.builder.get_pointer_field(1), value)
       }
       #[inline]
@@ -1980,11 +2322,11 @@ pub mod directory {
     pub struct Pipeline { _typeless : ::capnp::any_pointer::Pipeline }
     impl FromTypelessPipeline for Pipeline {
       fn new(typeless : ::capnp::any_pointer::Pipeline) -> Pipeline {
-        Pipeline { _typeless : typeless }
+        Pipeline { _typeless : typeless,  }
       }
     }
     impl Pipeline {
-      pub fn get_ref(&self) -> ::cafs_capnp::reference::Pipeline {
+      pub fn get_ref(&self) -> ::cafs_capnp::reference::Pipeline<> {
         FromTypelessPipeline::new(self._typeless.get_pointer_field(1))
       }
     }

@@ -8,7 +8,6 @@ extern crate cafs;
 use docopt::Docopt;
 use std::path::Path;
 use std::fs::File;
-use capnp::{MessageBuilder, MallocMessageBuilder};
 
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
 use cafs::proto;

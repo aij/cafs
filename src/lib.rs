@@ -10,7 +10,7 @@ use rustc_serialize::base64::ToBase64;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
-use capnp::message::MessageBuilder;
+use capnp::message::Builder;
 
 pub mod storage_pool_leveldb;
 mod voldb_sqlite3;
@@ -51,8 +51,8 @@ pub trait VolDb {
 impl<'a> fmt::Display for proto::reference::Reader<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         //use proto::reference::Builder;
-        use capnp::traits::CastableTo;
-        let mut message = capnp::message::MallocMessageBuilder::new_default();
+        //use capnp::traits::CastableTo;
+        let mut message = Builder::new_default();
         message.set_root(self.clone());
         let bytes = message_to_bytes(&message);
         println!("bytes = {:?}", bytes);
@@ -62,23 +62,24 @@ impl<'a> fmt::Display for proto::reference::Reader<'a> {
     }
 }
 
-pub fn message_to_bytes<M>(message: &M) -> Vec<u8> where M: capnp::MessageBuilder {
+pub fn message_to_bytes<A>(message: &Builder<A>) -> Vec<u8> where A: capnp::message::Allocator {
     let mut encoded: Vec<u8> = vec![];
     capnp::serialize_packed::write_message(&mut encoded, message);
     encoded
 }
 
+
 pub struct OwnedMessage<T> {
-    message: ::capnp::OwnedSpaceMessageReader,
+    message: ::capnp::message::Reader<::capnp::serialize::OwnedSegments>,
     phantom_data: ::std::marker::PhantomData<T>
 }
 
 impl <'a, T> OwnedMessage <T> where T: ::capnp::traits::FromPointerReader<'a> {
-    pub fn new(mr: ::capnp::OwnedSpaceMessageReader) -> OwnedMessage<T> {
+    pub fn new(mr: ::capnp::message::Reader<::capnp::serialize::OwnedSegments>) -> OwnedMessage<T> {
         OwnedMessage { message: mr, phantom_data: ::std::marker::PhantomData }
     }
     pub fn get(&'a self) -> ::capnp::Result<T> {
-        use capnp::MessageReader;
+        use capnp::message::Reader;
         self.message.get_root()
     }
 }
@@ -92,7 +93,7 @@ impl<'a,'b> ToOwnedMessage<proto::reference::block_ref::Reader<'a>> for proto::r
     fn to_owned_message(self) -> capnp::Result<OwnedMessage<proto::reference::block_ref::Reader<'a>>> {
         let mut buffer = Vec::new();
         {
-            let mut message = ::capnp::MallocMessageBuilder::new_default();
+            let mut message = Builder::new_default();
             message.set_root(self);
             capnp::serialize::write_message(&mut buffer, &message);
         }
@@ -100,3 +101,4 @@ impl<'a,'b> ToOwnedMessage<proto::reference::block_ref::Reader<'a>> for proto::r
         Ok(OwnedMessage::new(try!(mr)))
     }
 }
+
