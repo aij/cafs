@@ -59,7 +59,7 @@ impl Publisher {
                 use openssl::crypto::symm::{encrypt, Type};
                 use AES256_IV;
                 let key = Sha256::of_bytes(block);
-                let ct = encrypt(Type::AES_256_CBC, key.as_slice(), AES256_IV, block);
+                let ct = encrypt(Type::AES_256_CBC, key.as_slice(), &AES256_IV, block);
                 let hash = try!(self.save_raw_block(&ct));
                 Ok(Box::new(move |b: &mut proto::reference::block_ref::Builder| {
                     b.borrow().init_rawblock().set_sha256(hash.as_slice());

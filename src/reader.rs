@@ -120,7 +120,7 @@ impl Reader {
                 use openssl::crypto::symm::{decrypt, Type};
                 use AES256_IV;
                 let key = try!(k);
-                let plain = decrypt(Type::AES_256_CBC, key, AES256_IV, &raw);
+                let plain = decrypt(Type::AES_256_CBC, key, &AES256_IV, &raw);
                 let hash = Sha256::of_bytes(&plain);
                 if (r.get_size() != 0) {
                     assert_eq!(r.get_size(), plain.len() as u64);
