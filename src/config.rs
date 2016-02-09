@@ -12,23 +12,26 @@ pub struct StoragePool {
     pub path: PathBuf,
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
-pub struct Storage {
-    pub voldb: VolDb,
-    pub pool: StoragePool,
+#[derive(RustcEncodable, RustcDecodable, Clone)]
+pub enum EncType {
+    None,
+    AES256, // Covergent AES_256_CBC with SHA-2 256 as key.
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Settings {
     //block_size: usize,
-    //storage: BTreeMap<String, Storage>,
-    storage: Vec<Storage>,
+    pub enc_type: EncType,
+    pub voldb: VolDb,
+    pub pool: StoragePool,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
-            storage: vec![Storage { voldb: VolDb::default(), pool: StoragePool::default() }]
+            enc_type: EncType::AES256,
+            voldb: VolDb::default(),
+            pool: StoragePool::default(),
         }
     }
 }

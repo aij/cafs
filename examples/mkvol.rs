@@ -12,6 +12,7 @@ use std::fs::File;
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
 use cafs::proto;
 use cafs::{PKey, VolDbSqlite};
+use cafs::config;
 
 // Write the Docopt usage string.
 static USAGE: &'static str = "
@@ -42,11 +43,14 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
     println!("{:?}", args);
 
-    let stor = StoragePoolLeveldb::open(Path::new(&args.arg_storage_pool), args.flag_create_storage).unwrap();
-    let voldb = VolDbSqlite::open(Path::new(&args.arg_voldb), args.flag_create_voldb).unwrap();
+    //let stor = StoragePoolLeveldb::open(Path::new(&args.arg_storage_pool), args.flag_create_storage).unwrap();
+    //let voldb = VolDbSqlite::open(Path::new(&args.arg_voldb), args.flag_create_voldb).unwrap();
+    let mut conf = config::load();
+    conf.voldb.path = Path::new(&args.arg_voldb).to_owned();
+    conf.pool.path = Path::new(&args.arg_storage_pool).to_owned();
     let key = load_key(args.flag_key_name).unwrap();
 
-    let publisher = cafs::Publisher::new(stor, Box::new(voldb));
+    let publisher = cafs::Publisher::new(&conf).unwrap();
     let volid = args.arg_volume_name.into_bytes();
     let serial = args.arg_serial.unwrap_or(0);
     {

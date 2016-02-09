@@ -11,7 +11,7 @@ pub trait VolDb {
     fn find_latest<'a,'b,'c>(&self, key: &'a PKey, volid: &'b [u8], min_serial: i64) -> Result<Option<OwnedMessage<proto::volume_root::Reader<'c>>>>;
 }
 
-pub fn open(conf: &config::VolDb) -> Result<Box<VolDb>> {
-    Ok(Box::new(try!(VolDbSqlite::open(&conf.path, true))))
+pub fn open(conf: &config::Settings) -> Result<Box<VolDb>> {
+    Ok(Box::new(try!(VolDbSqlite::open(&conf.voldb.path, true))))
 }
 

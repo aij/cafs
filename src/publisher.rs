@@ -14,12 +14,15 @@ use VolDb;
 use proto;
 use storage_pool_leveldb;
 use sha256::Sha256;
+use config::{EncType, Settings};
+use storage;
+use voldb;
 
 const BLOCK_SIZE:usize = 256*1024;
 
 
 pub struct Publisher {
-    storage: storage_pool_leveldb::StoragePoolLeveldb, // TODO: Abstract this.
+    storage: Box<storage::StoragePool>, // TODO: Abstract this.
     voldb: Box<VolDb>,
     options: Options,
 }
@@ -28,15 +31,16 @@ pub struct Options {
     enc_type: EncType,
 }
 
-pub enum EncType {
-    None,
-    AES256, // Covergent AES_256_CBC with SHA-2 256 as key.
-}
-
 impl Publisher {
-    pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb, voldb: Box<VolDb>) -> Publisher {
+    /*pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb, voldb: Box<VolDb>) -> Publisher {
         Publisher{ storage: s, voldb: voldb, options: Options{ enc_type: EncType::AES256 } }
+    }*/
+    pub fn new(s: &Settings) -> Result<Publisher> {
+        let sp = try!(storage::open(s));
+        let voldb = try!(voldb::open(s));
+        Ok(Publisher{ storage: sp, voldb: voldb, options: Options{ enc_type: s.enc_type.clone() } })
     }
+    
     fn save_raw_block(&self, block:&[u8]) -> Result<Sha256> {
         match self.storage.put(block) {
             Ok(x) => Ok(x),

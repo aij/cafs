@@ -13,7 +13,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use capnp::message::Builder;
 
-mod config;
+pub mod config;
 pub mod storage_pool_leveldb;
 mod voldb_sqlite3;
 pub use voldb_sqlite3::VolDbSqlite;
