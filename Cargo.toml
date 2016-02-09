@@ -2,6 +2,8 @@
 name = "cafs"
 version = "0.0.1"
 authors = ["Ivan Jager <aij+@mrph.org>"]
+description = "Content-addressable filesystem"
+license = "AGPL-3.0"
 
 [lib]
 name = "cafs"
@@ -24,6 +26,6 @@ rust-sqlite = "^0.2.0"
 toml-config = "0.1.0"
 
 [dev-dependencies]
-docopt = "*"
-rustc-serialize = "*"
+docopt = "^0.6.78"
+rustc-serialize = "^0.3.16"
 url = "^0.2.35"
