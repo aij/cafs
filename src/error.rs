@@ -60,6 +60,12 @@ impl std::convert::From<::openssl::ssl::error::SslError> for Error {
    }
 }
 
+impl std::convert::From<::leveldb::database::error::Error> for Error {
+    fn from(e: ::leveldb::database::error::Error) -> Error {
+        Error::other(e)
+   }
+}
+
 /*
 impl<E> std::convert::From<E> for Error  where E: Into<Box<std::error::Error + Send + Sync>> {
     fn from(e: E) -> Error {
