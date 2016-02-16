@@ -17,7 +17,7 @@ use cafs::storage_pool_leveldb::StoragePoolLeveldb;
 use cafs::proto;
 use cafs::Sha256;
 
-use capnp::{MessageBuilder, MallocMessageBuilder, MessageReader};
+use capnp::message;
 
 // Write the Docopt usage string.
 static USAGE: &'static str = "
@@ -50,7 +50,7 @@ fn main() {
 
     let stor = StoragePoolLeveldb::open(Path::new(&args.arg_storage_pool), false).unwrap();
     let reader = cafs::Reader::new(stor);
-    let mut message = MallocMessageBuilder::new_default();
+    let mut message = message::Builder::new_default();
     let r = mk_ref(&args, &mut message);
     let res = reader.extract_path(r, true, Path::new(&args.arg_destination));
     match res {
@@ -60,7 +60,7 @@ fn main() {
     }
 }
 
-fn mk_ref<'a>(args: &'a Args, message: &'a mut MallocMessageBuilder) -> proto::reference::Reader<'a> {
+fn mk_ref<'a, A>(args: &'a Args, message: &'a mut message::Builder<A>) -> proto::reference::Reader<'a> where A: capnp::message::Allocator {
 
     let r = &args.arg_reference;
     assert_eq!(&r[0..12], "cafs:///ref/");
