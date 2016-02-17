@@ -4,7 +4,9 @@ extern crate openssl;
 extern crate capnp;
 extern crate rustc_serialize;
 extern crate sqlite3;
-extern crate toml_config;
+extern crate fuse;
+extern crate time;
+//extern crate toml_config;
 
 use rustc_serialize::base64;
 use rustc_serialize::base64::ToBase64;
@@ -23,6 +25,8 @@ mod reader;
 mod error;
 mod voldb;
 mod storage;
+mod fs;
+pub use fs::Fs;
 
 #[allow(dead_code)]
 pub mod proto {
@@ -101,3 +105,25 @@ impl<'a,'b> ToOwnedMessage<proto::reference::block_ref::Reader<'a>> for proto::r
     }
 }
 
+
+impl<'a> std::str::FromStr for OwnedMessage<proto::reference::Reader<'a>> {
+
+    type Err = Error;
+    
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        use rustc_serialize::base64::FromBase64;
+       assert_eq!(&s[0..12], "cafs:///ref/");
+        let b64 = &s[12..];
+        println!("b64 = {}", b64);    
+        let bytes = b64.from_base64().unwrap();
+        println!("bytes = {:?}", bytes);
+
+        let message_reader = try!(capnp::serialize_packed::read_message(&mut io::Cursor::new(bytes), capnp::message::DEFAULT_READER_OPTIONS));
+        Ok(OwnedMessage::new(message_reader))
+/*        let reader : proto::reference::Reader = message_reader.get_root().unwrap();
+        // FIXME: Is there a less stupid way to return a Reader?
+        message.set_root(reader).unwrap();
+        message.get_root::<proto::reference::Builder>().unwrap().as_reader()
+*/
+    }
+}

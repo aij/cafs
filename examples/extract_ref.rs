@@ -8,16 +8,13 @@ extern crate url;
 
 use docopt::Docopt;
 use std::path::Path;
-use std::io;
 use std::io::Write;
-use url::Url;
-use rustc_serialize::base64::FromBase64;
+use std::str::FromStr;
 
 use cafs::storage_pool_leveldb::StoragePoolLeveldb;
 use cafs::proto;
-use cafs::Sha256;
+use cafs::OwnedMessage;
 
-use capnp::message;
 
 // Write the Docopt usage string.
 static USAGE: &'static str = "
@@ -50,28 +47,11 @@ fn main() {
 
     let stor = StoragePoolLeveldb::open(Path::new(&args.arg_storage_pool), false).unwrap();
     let reader = cafs::Reader::new(stor);
-    let mut message = message::Builder::new_default();
-    let r = mk_ref(&args, &mut message);
-    let res = reader.extract_path(r, true, Path::new(&args.arg_destination));
+    let r = OwnedMessage::<proto::reference::Reader>::from_str(&args.arg_reference).unwrap();
+    let res = reader.extract_path(r.get().unwrap(), true, Path::new(&args.arg_destination));
     match res {
         Ok(()) => (),
         Err(_) =>
             println_err!("{:?}", res),
     }
-}
-
-fn mk_ref<'a, A>(args: &'a Args, message: &'a mut message::Builder<A>) -> proto::reference::Reader<'a> where A: capnp::message::Allocator {
-
-    let r = &args.arg_reference;
-    assert_eq!(&r[0..12], "cafs:///ref/");
-    let b64 = &r[12..];
-    println!("b64 = {}", b64);    
-    let bytes = b64.from_base64().unwrap();
-    println!("bytes = {:?}", bytes);
-
-    let message_reader = capnp::serialize_packed::read_message(&mut io::Cursor::new(bytes), capnp::message::DEFAULT_READER_OPTIONS).unwrap();
-    let reader : proto::reference::Reader = message_reader.get_root().unwrap();
-    // FIXME: Is there a less stupid way to return a Reader?
-    message.set_root(reader).unwrap();
-    message.get_root::<proto::reference::Builder>().unwrap().as_reader()
 }

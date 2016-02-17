@@ -1,6 +1,6 @@
 use std::env;
 use std::path::{Path, PathBuf};
-use toml_config::ConfigFactory;
+//use toml_config::ConfigFactory;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct VolDb {
