@@ -72,32 +72,32 @@ impl<E> std::convert::From<E> for Error  where E: Into<Box<std::error::Error + S
         Error::other(e)
    }
 }*/
-    
+
 fn get_backtrace_now() -> String {
     let mut bt = vec![];
     backtrace::trace(&mut |frame| {
         let ip = frame.ip();
-        let symbol_address = frame.symbol_address();
+        //let symbol_address = frame.symbol_address();
 
-        write!(bt, "@{}", ip as u64, );
+        write!(bt, "@{}", ip as u64, ).ok();
         
         // Resolve this instruction pointer to a symbol name
         backtrace::resolve(ip, &mut |symbol| {
             if let Some(name) = symbol.name() {
-                write!(bt, ": ");
+                write!(bt, ": ").ok();
                 let sname = String::from_utf8_lossy(name);
                 //backtrace::demangle(&mut bt, &sname);
-                write!(bt, "{}", sname);
-                write!(bt, "()");
+                write!(bt, "{}", sname).ok();
+                write!(bt, "()").ok();
             }
             if let Some(filename) = symbol.filename() {
-                write!(bt, ": {}", String::from_utf8_lossy(&filename));
+                write!(bt, ": {}", String::from_utf8_lossy(&filename)).ok();
             }
             if let Some(line) = symbol.lineno() {
-                write!(bt, ":{}", line);
+                write!(bt, ":{}", line).ok();
             }
         });
-        writeln!(bt, "");
+        writeln!(bt, "").ok();
         true
     });
     String::from_utf8_lossy(&bt).to_string()

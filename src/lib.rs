@@ -56,8 +56,8 @@ impl<'a> fmt::Display for proto::reference::Reader<'a> {
         //use proto::reference::Builder;
         //use capnp::traits::CastableTo;
         let mut message = Builder::new_default();
-        message.set_root(self.clone());
-        let bytes = message_to_bytes(&message);
+        message.set_root(self.clone()).unwrap();
+        let bytes = message_to_bytes(&message).unwrap();
         println!("bytes = {:?}", bytes);
 
         let b64 = bytes.to_base64(base64::URL_SAFE);
@@ -65,10 +65,10 @@ impl<'a> fmt::Display for proto::reference::Reader<'a> {
     }
 }
 
-pub fn message_to_bytes<A>(message: &Builder<A>) -> Vec<u8> where A: capnp::message::Allocator {
+fn message_to_bytes<A>(message: &Builder<A>) -> Result<Vec<u8>> where A: capnp::message::Allocator {
     let mut encoded: Vec<u8> = vec![];
-    capnp::serialize_packed::write_message(&mut encoded, message);
-    encoded
+    try!(capnp::serialize_packed::write_message(&mut encoded, message));
+    Ok(encoded)
 }
 
 
@@ -82,7 +82,6 @@ impl <'a, T> OwnedMessage <T> where T: ::capnp::traits::FromPointerReader<'a> {
         OwnedMessage { message: mr, phantom_data: ::std::marker::PhantomData }
     }
     pub fn get(&'a self) -> ::capnp::Result<T> {
-        use capnp::message::Reader;
         self.message.get_root()
     }
 }
@@ -97,8 +96,8 @@ impl<'a,'b> ToOwnedMessage<proto::reference::block_ref::Reader<'a>> for proto::r
         let mut buffer = Vec::new();
         {
             let mut message = Builder::new_default();
-            message.set_root(self);
-            capnp::serialize::write_message(&mut buffer, &message);
+            try!(message.set_root(self));
+            try!(capnp::serialize::write_message(&mut buffer, &message));
         }
         let mr = capnp::serialize::read_message(&mut io::Cursor::new(buffer), capnp::message::DEFAULT_READER_OPTIONS);
         Ok(OwnedMessage::new(try!(mr)))

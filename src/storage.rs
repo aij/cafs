@@ -1,5 +1,4 @@
 use config;
-use voldb_sqlite3::VolDbSqlite;
 use error::Result;
 pub use storage_pool_leveldb::StoragePoolLeveldb as StoragePool;
 

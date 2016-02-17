@@ -3,7 +3,6 @@ extern crate cafs;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
-use std::path::Path;
 use std::fs::File;
 
 use cafs::{PKey, Sha256};

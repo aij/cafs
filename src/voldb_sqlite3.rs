@@ -2,7 +2,7 @@ use std::path::Path;
 use std::io;
 
 use sqlite3;
-use sqlite3::{DatabaseConnection, Query, ResultRowAccess, StatementUpdate, SqliteResult, SqliteError};
+use sqlite3::{DatabaseConnection, Query, ResultRowAccess, StatementUpdate, /*SqliteResult, SqliteError*/};
 use capnp;
 use capnp::message::Reader;
 
@@ -18,7 +18,7 @@ pub struct VolDbSqlite {
 }
 
 impl VolDbSqlite {
-    pub fn open(path: &Path, create: bool) -> Result<VolDbSqlite> {
+    pub fn open(path: &Path, _create: bool) -> Result<VolDbSqlite> {
         // FIXME: Check create.
         let mut conn = try!(sqlite3::access::open(&path.to_string_lossy(), None));
         try!(VolDbSqlite::init_db(&mut conn));

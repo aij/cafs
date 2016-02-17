@@ -1,10 +1,9 @@
 use std::path::Path;
-use std::io;
 use std::io::Read;
 use std::fs;
-use std::fs::{DirEntry, File, FileType, OpenOptions};
+use std::fs::{DirEntry, File, FileType};
 
-use capnp::message::{Builder, HeapAllocator, Reader};
+use capnp::message::Builder;
 use capnp::serialize_packed;
 use openssl::crypto::pkey::PKey;
 
@@ -12,8 +11,8 @@ use Result;
 use Error;
 use VolDb;
 use proto;
-use storage_pool_leveldb;
 use sha256::Sha256;
+use config;
 use config::{EncType, Settings};
 use storage;
 use voldb;
@@ -32,13 +31,14 @@ pub struct Options {
 }
 
 impl Publisher {
-    /*pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb, voldb: Box<VolDb>) -> Publisher {
-        Publisher{ storage: s, voldb: voldb, options: Options{ enc_type: EncType::AES256 } }
-    }*/
     pub fn new(s: &Settings) -> Result<Publisher> {
         let sp = try!(storage::open(s));
         let voldb = try!(voldb::open(s));
         Ok(Publisher{ storage: sp, voldb: voldb, options: Options{ enc_type: s.enc_type.clone() } })
+    }
+
+    pub fn new_default() -> Result<Publisher> {
+        Publisher::new(&config::load())
     }
     
     fn save_raw_block(&self, block:&[u8]) -> Result<Sha256> {
@@ -93,7 +93,7 @@ impl Publisher {
         let mut buf = [0u8; BLOCK_SIZE];
         let mut message = Builder::new_default();
         {
-        let mut indir = message.init_root::<proto::indirect_block::Builder>();
+        let indir = message.init_root::<proto::indirect_block::Builder>();
         let mut blocks = vec![];
         
         loop {
@@ -108,7 +108,6 @@ impl Publisher {
         { // Use a Scope to limit lifetime of the borrow.
             let mut sub = indir.init_subblocks(blocks.len() as u32);
             for i in 0 .. blocks.len() {
-                use db_key::Key;
                 let mut block = sub.borrow().get(i as u32).init_block();
                 blocks[i](&mut block);
             }
@@ -116,7 +115,7 @@ impl Publisher {
         }
         let mut encoded: Vec<u8> = vec![];
         {
-            serialize_packed::write_message(&mut encoded, &mut message);
+            try!(serialize_packed::write_message(&mut encoded, &mut message));
         }
         self.save_block(&encoded)
     }
@@ -141,7 +140,7 @@ impl Publisher {
         
         let mut message = Builder::new_default();
         {
-            let mut dirb = message.init_root::<proto::directory::Builder>();
+            let dirb = message.init_root::<proto::directory::Builder>();
             let mut files = dirb.init_files(readir.len() as u32);
 
             for (i, dentry) in readir.iter().enumerate() {
@@ -149,11 +148,11 @@ impl Publisher {
                 let mut entry = files.borrow().get(i as u32);
                 entry.set_name(&dentry.file_name().to_string_lossy());
                 let mut fref = entry.init_ref();
-                self.save_path_with_type(&dentry.path(), ft, &mut fref);
+                try!(self.save_path_with_type(&dentry.path(), ft, &mut fref));
             }
         }
         let mut dirbits: Vec<u8> = vec![];
-        serialize_packed::write_message(&mut dirbits, &mut message);
+        try!(serialize_packed::write_message(&mut dirbits, &mut message));
         {
             let mut dref = refb.borrow().init_directory();
             try!(self.save_data(&dirbits, &mut dref));

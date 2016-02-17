@@ -122,7 +122,7 @@ impl Reader {
                 let key = try!(k);
                 let plain = decrypt(Type::AES_256_CBC, key, &AES256_IV, &raw);
                 let hash = Sha256::of_bytes(&plain);
-                if (r.get_size() != 0) {
+                if r.get_size() != 0 {
                     assert_eq!(r.get_size(), plain.len() as u64);
                 }
                 assert_eq!(hash, Sha256::from_u8(key)); // FIXME
