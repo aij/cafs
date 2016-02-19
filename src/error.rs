@@ -23,6 +23,10 @@ impl Error {
         Error::new(io::Error::new(io::ErrorKind::Other, e))
     }
 
+    pub fn str(s: &str) -> Error {
+        Error::new(io::Error::new(io::ErrorKind::Other, s))
+    }
+
     pub fn get_backtrace_str(&self) -> &str {
         &self.backtrace
     }

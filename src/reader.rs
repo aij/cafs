@@ -20,7 +20,6 @@ use Error;
 use OwnedMessage;
 
 use capnp;
-use capnp::message::Reader as PReader;
 
 
 #[derive(Clone)]
@@ -95,6 +94,31 @@ impl<'a> Read for IndirectBlockReader<'a> {
 }
 
 
+pub struct DirectoryReader<'a> {
+    r: OwnedMessage<proto::directory::Reader<'a>>
+}
+impl<'a> DirectoryReader<'a> {
+    fn new(r: Reader, dr: proto::reference::data_ref::Reader) -> Result<DirectoryReader> {
+        let mut dir_read = try!(r.dataref_read(dr));
+        let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
+        let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
+        {
+            let reader : proto::directory::Reader = try!(message_reader.get_root());
+            let _ = try!(reader.get_files());
+        }
+        Ok(DirectoryReader { r: OwnedMessage::new(message_reader) })
+    }
+}
+
+impl <'a> std::iter::IntoIterator for &'a DirectoryReader<'a> {
+    type Item = ::cafs_capnp::directory::entry::Reader<'a>;
+    type IntoIter = capnp::traits::ListIter<capnp::struct_list::Reader<'a,::cafs_capnp::directory::entry::Owned>, Self::Item>;
+    fn into_iter(self) -> Self::IntoIter {
+        // Unwrap should be safe becaused we previously called get_root in new().
+        self.r.get().unwrap().get_files().unwrap().iter()
+    }
+}
+
 impl Reader {
     pub fn new(s: storage_pool_leveldb::StoragePoolLeveldb) -> Reader {
         Reader{ storage: Arc::new(s) }
@@ -163,7 +187,7 @@ impl Reader {
     fn extract_file_data(&self, r: proto::reference::data_ref::Reader, create: bool, out: &Path) -> Result<()> {
         let mut file = try!(File::create(out));
         let mut read = try!(self.dataref_read(r));
-        let bytes = try!(io::copy(&mut read, &mut file));
+        let _bytes = try!(io::copy(&mut read, &mut file));
         Ok(())
     }
 
@@ -174,6 +198,7 @@ impl Reader {
             Ok(File(Ok(dr))) =>
                 self.extract_file_data(dr, create, out),
             Ok(Directory(Ok(dr))) => {
+                //TODO: Now that directory reader compiles, use it!
                 let mut dir_read = try!(self.dataref_read(dr));
                 let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
                 let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
