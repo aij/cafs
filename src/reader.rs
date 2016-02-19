@@ -98,7 +98,7 @@ pub struct DirectoryReader<'a> {
     r: OwnedMessage<proto::directory::Reader<'a>>
 }
 impl<'a> DirectoryReader<'a> {
-    fn new(r: Reader, dr: proto::reference::data_ref::Reader) -> Result<DirectoryReader> {
+    fn new(r: &'a Reader, dr: proto::reference::data_ref::Reader<'a>) -> Result<DirectoryReader<'a>> {
         let mut dir_read = try!(r.dataref_read(dr));
         let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
         let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
@@ -198,15 +198,11 @@ impl Reader {
             Ok(File(Ok(dr))) =>
                 self.extract_file_data(dr, create, out),
             Ok(Directory(Ok(dr))) => {
-                //TODO: Now that directory reader compiles, use it!
-                let mut dir_read = try!(self.dataref_read(dr));
-                let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
-                let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
-                let reader : proto::directory::Reader = try!(message_reader.get_root());
+                let dir_read = try!(DirectoryReader::new(self, dr));
                 if create {
                     try!(fs::create_dir(out));
                 }
-                for f in try!(reader.get_files()).iter() {
+                for f in &dir_read {
                     let path = out.join(try!(f.get_name()));
                     assert_eq!(path.parent(), Some(out)); //FIXME
                     try!(self.extract_path(try!(f.get_ref()), create, &path));
