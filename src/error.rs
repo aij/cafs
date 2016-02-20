@@ -51,6 +51,11 @@ impl std::convert::From<capnp::Error> for Error {
         Error::other(e)
     }
 }
+impl std::convert::From<capnp::NotInSchema> for Error {
+    fn from(e: capnp::NotInSchema) -> Error {
+        Error::other(e)
+    }
+}
 
 impl std::convert::From<::sqlite3::SqliteError> for Error {
     fn from(e: ::sqlite3::SqliteError) -> Error {

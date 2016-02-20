@@ -93,12 +93,11 @@ impl<'a> Read for IndirectBlockReader<'a> {
     }
 }
 
-
 pub struct DirectoryReader<'a> {
     r: OwnedMessage<proto::directory::Reader<'a>>
 }
 impl<'a> DirectoryReader<'a> {
-    fn new(r: &'a Reader, dr: proto::reference::data_ref::Reader<'a>) -> Result<DirectoryReader<'a>> {
+    pub fn new(r: &'a Reader, dr: proto::reference::data_ref::Reader<'a>) -> Result<DirectoryReader<'a>> {
         let mut dir_read = try!(r.dataref_read(dr));
         let mut dir_bufread = io::BufReader::new(dir_read); // TODO: Implement natively.
         let message_reader = try!(capnp::serialize_packed::read_message(&mut dir_bufread, capnp::message::DEFAULT_READER_OPTIONS));
